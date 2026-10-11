@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+/* ISALONE password lock: without access, go back to the homepage to enter the password */
+(function(){ try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
+catch(e){ location.replace("index.html?locked"); } })();
+</script>
+<title>Lookbook — ISALONE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#111;
+    --grey:#9a9a9a;
+    --mid:#555;
+    --light:#f4f4f4;
+    --line:#e6e6e6;
+    --font:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    --serif:"Cormorant Garamond", "Times New Roman", Georgia, serif;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#fff;color:var(--black);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  body.lock{overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-transform:inherit;letter-spacing:inherit}
+  img{display:block}
+  .tiny{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+  .muted{color:var(--grey)}
+
+  /* ---------- HEADER (same as shop) ---------- */
+  header{
+    position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 32px;
+  }
+  .h-left,.h-right{display:flex;gap:28px;align-items:center}
+  .h-right{justify-content:flex-end}
+  .h-left button{display:flex;align-items:center;gap:8px}
+  .h-left a,.h-right a{position:relative}
+  .h-left a::after,.h-right a::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+  .h-left a:hover::after,.h-right a:hover::after,.h-left a.here::after{transform:scaleX(1)}
+  .logo img{height:46px;width:auto}
+  .ico{width:12px;height:12px}
+
+  /* ---------- INTRO ---------- */
+  .intro{padding:90px 32px 110px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px}
+  .intro h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:min(52px,4.3vw);line-height:1.2;white-space:nowrap}
+  .intro p{max-width:46ch;font-size:13px;line-height:1.8;color:var(--mid)}
+  .chapters-nav{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  .chapters-nav a{border-bottom:1px solid transparent;padding-bottom:3px;transition:border-color .25s}
+  .chapters-nav a:hover{border-color:var(--black)}
+
+  /* ---------- COVER ---------- */
+  .cover{padding:0 32px 130px}
+  .cover img{width:100%;height:auto;max-height:92vh;object-fit:cover;cursor:zoom-in}
+  .cover:empty{display:none}
+
+  /* ---------- CHAPTERS ---------- */
+  .chapter{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:48px;padding:0 32px 140px}
+  .chapter:nth-of-type(even){grid-template-columns:minmax(0,8fr) minmax(0,4fr)}
+  .chapter:nth-of-type(even) .cap{order:2}
+  .cap{position:sticky;top:110px;align-self:start;display:flex;flex-direction:column;gap:14px;padding-top:6px}
+  .cap .no{font-family:var(--serif);font-style:italic;font-size:64px;line-height:1;font-weight:400}
+  .cap h2{font-size:15px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;line-height:1.35;max-width:22ch}
+  .cap .meta{display:flex;gap:14px}
+  .cap .line{font-family:var(--serif);font-style:italic;font-size:20px;line-height:1.4;color:var(--mid);max-width:24ch}
+  .shop{
+    position:relative;overflow:hidden;align-self:flex-start;margin-top:10px;
+    display:inline-flex;gap:18px;align-items:center;padding:14px 18px;border:1px solid var(--black);
+    transition:color .45s var(--ease);
+  }
+  .shop::before{content:"";position:absolute;inset:0;background:var(--black);transform:translateY(101%);transition:transform .45s var(--ease)}
+  .shop span{position:relative}
+  .shop:hover{color:#fff}
+  .shop:hover::before{transform:none}
+
+  .shots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .shot{position:relative;overflow:hidden;background:var(--light);cursor:zoom-in;
+    opacity:0;transform:translateY(28px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+  .shot.in{opacity:1;transform:none}
+  .shot:first-child{grid-column:1 / -1}
+  .shot:nth-child(even):last-child{grid-column:1 / -1}
+  .shot.wait{display:none}
+  .shot img{width:100%;height:auto;transition:transform 1.4s var(--ease)}
+  .shot:hover img{transform:scale(1.03)}
+  .shot .k{position:absolute;left:14px;bottom:12px;color:#fff;mix-blend-mode:difference;opacity:0;transition:opacity .3s}
+  .shot:hover .k{opacity:1}
+
+  /* ---------- LIGHTBOX ---------- */
+  .lb{position:fixed;inset:0;z-index:60;background:#fff;display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+  .lb.on{opacity:1;pointer-events:auto}
+  .lb img{max-width:calc(100vw - 160px);max-height:calc(100vh - 140px);width:auto;height:auto;object-fit:contain;
+    opacity:0;transform:translateY(14px);transition:opacity .45s var(--ease),transform .6s var(--ease)}
+  .lb img.on{opacity:1;transform:none}
+  .lb-top{position:absolute;top:24px;left:32px;right:32px;display:flex;justify-content:space-between;align-items:center}
+  .lb-arrow{position:absolute;top:50%;transform:translateY(-50%);padding:24px;opacity:.45;transition:opacity .2s}
+  .lb-arrow:hover{opacity:1}
+  .lb-arrow.prev{left:8px}.lb-arrow.next{right:8px}
+  .lb-foot{position:absolute;bottom:24px;left:32px;right:32px;display:flex;justify-content:space-between;align-items:center}
+  .lb-foot a{border-bottom:1px solid var(--black);padding-bottom:3px}
+
+  /* ---------- END ---------- */
+  .end{padding:40px 32px 120px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+  .end p{font-family:var(--serif);font-style:italic;font-size:clamp(24px,3vw,38px);line-height:1.25}
+
+  /* ---------- MENU ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .3s;z-index:40}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .panel{position:fixed;top:0;bottom:0;left:0;width:min(400px,92vw);background:#fff;z-index:50;padding:28px;
+    transform:translateX(-100%);transition:transform .45s var(--ease)}
+  .panel.on{transform:none}
+  .panel .close{position:absolute;top:24px;right:28px}
+  .panel h3{margin:4px 0 36px}
+  .menu-links a{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:9px 0;transition:padding .25s var(--ease)}
+  .menu-links a:hover{padding-left:8px}
+
+  footer{display:flex;justify-content:space-between;padding:28px 32px;border-top:1px solid var(--line)}
+  footer nav{display:flex;gap:24px}
+
+  @media (max-width:900px){
+    header{padding:14px 16px}
+    .h-left .lbl,.h-left .hide-m,.h-right .hide-m{display:none}
+    .logo img{height:38px}
+    .intro{padding:56px 16px 70px}
+    .cover{padding:0 16px 80px}
+    .chapter,.chapter:nth-of-type(even){grid-template-columns:1fr;gap:26px;padding:0 16px 90px}
+    .chapter:nth-of-type(even) .cap{order:0}
+    .cap{position:static}
+    .cap .no{font-size:48px}
+    .shots{gap:8px}
+    .shot .k{opacity:1}
+    .lb img{max-width:100vw;max-height:calc(100vh - 150px)}
+    .lb-top{top:16px;left:16px;right:16px}
+    .lb-foot{bottom:18px;left:16px;right:16px}
+    .lb-arrow{display:none}
+    .end{padding:20px 16px 80px}
+    footer{flex-direction:column;gap:16px;padding:24px 16px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .shot{opacity:1;transform:none;transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <button class="tiny" id="openMenu" aria-label="Menu">
+      <svg class="ico" viewBox="0 0 12 12"><path d="M0 2h12M0 6h12M0 10h12" stroke="currentColor"/></svg>
+      <span class="lbl">Menu</span>
+    </button>
+    <a href="pro.html" class="tiny hide-m">Shop</a>
+    <a href="lookbook.html" class="tiny hide-m here">Lookbook</a>
+  </div>
+  <a href="index.html" class="logo" aria-label="ISALONE home"><img src="./img/logo.png" alt="ISALONE"></a>
+  <div class="h-right">
+    <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener" class="tiny hide-m">Instagram</a>
+    <a href="pro.html?cart=1" class="tiny">Cart ( <span id="cartCount">0</span> )</a>
+  </div>
+</header>
+
+<section class="intro">
+  <span class="tiny muted">Lookbook · Drop 001</span>
+  <h1>When you wear this, you’ll always think about me.</h1>
+  <p>Our first collection, photographed in the open. Three pieces, made to be lived in.</p>
+  <nav class="chapters-nav tiny" id="chaptersNav"></nav>
+</section>
+
+<figure class="cover" id="cover"></figure>
+
+<main id="chapters"></main>
+
+<section class="end">
+  <p>No countdowns. No queues.<br>Just you, first.</p>
+  <a href="pro.html" class="shop tiny"><span>Shop Drop 001</span><span>→</span></a>
+</section>
+
+<footer class="tiny">
+  <span class="muted">© <span id="yr"></span> ISALONE</span>
+  <nav><a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a><a href="pro.html">Shop</a><a href="index.html">Home</a></nav>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" aria-hidden="true" role="dialog" aria-label="Lookbook photo">
+  <div class="lb-top tiny"><span id="lbTitle"></span><button id="lbClose">Close ✕</button></div>
+  <div id="lbImgs"></div>
+  <button class="lb-arrow prev tiny" id="lbPrev" aria-label="Previous photo">←</button>
+  <button class="lb-arrow next tiny" id="lbNext" aria-label="Next photo">→</button>
+  <div class="lb-foot tiny"><span class="muted" id="lbCount"></span><a id="lbShop" href="pro.html">Shop this look →</a></div>
+</div>
+
+<!-- MENU -->
+<aside class="panel" id="menu">
+  <button class="close tiny" data-close>Close</button>
+  <h3 class="tiny">Menu</h3>
+  <nav class="menu-links">
+    <a href="index.html">Home</a><a href="pro.html">Shop</a><a href="lookbook.html">Lookbook</a>
+    <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a>
+  </nav>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<script>
+/* =========================================================
+   EDIT HERE
+   product = position of the product in pro.html (0 = first)
+   photos  = photoshoot images for this look (first one is shown big)
+   ========================================================= */
+const CURRENCY = "$";
+
+/* Add photos by writing their exact file names below (the name must match exactly,
+   including .jpg vs .JPG — the live site is case-sensitive). First photo shows big. */
+const COVER = "./img/shoot.jpg";   // big opening photo under the title ("" to hide)
+
+const LOOKS = [
+  { product:0, short:"Capri", name:"212 Crest Oversized Fit Capri Sweatpants", price:41.99,
+    line:"Wide, easy, below the knee.",
+    photos:["./img/shoot1.jpg","./img/shoot11.jpg"] },
+  { product:1, short:"Long Sleeve", name:"Inverse Slim Fit Long Sleeve", price:29.99,
+    line:"Close to the body, light on the skin.",
+    photos:["./img/shoot3.jpg","./img/shoot33.jpg","./img/shoot333.JPG"] },
+  { product:2, short:"Hoodie", name:"Onyx Oversized Fit Hoodie", price:39.99,
+    line:"Something to disappear into.",
+    photos:["./img/shoot2.jpg","./img/shoot22.jpg","./img/shoot2222.jpg"] },
+];
+
+/* ---------- setup ---------- */
+const $ = s => document.querySelector(s);
+const fmt = n => `${CURRENCY}${n.toFixed(2)}`;
+const two = n => String(n).padStart(2,"0");
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shopLink = p => `pro.html?view=${p}`;
+$("#yr").textContent = new Date().getFullYear();
+
+/* ---------- build chapters ---------- */
+$("#chapters").innerHTML = LOOKS.map((l,i)=>`
+  <section class="chapter" id="look-${i+1}" data-i="${i}">
+    <div class="cap">
+      <span class="no">${two(i+1)}</span>
+      <span class="tiny muted">Look ${two(i+1)}</span>
+      <h2>${esc(l.name)}</h2>
+      <div class="meta tiny"><span>${fmt(l.price)}</span><span class="muted">Black</span></div>
+      ${l.line ? `<p class="line">${esc(l.line)}</p>` : ""}
+      <a class="shop tiny" href="${shopLink(l.product)}"><span>Shop the look</span><span>→</span></a>
+    </div>
+    <div class="shots">
+      ${l.photos.map((src,k)=>`
+        <figure class="shot wait" data-look="${i}" data-src="${src}">
+          <img src="${src}" alt="${esc(l.name)}, look ${two(i+1)} photo ${k+1}" decoding="async">
+          <span class="k tiny">${two(i+1)} — ${k+1}/${l.photos.length}</span>
+        </figure>`).join("")}
+    </div>
+  </section>`).join("");
+
+if (COVER){
+  $("#cover").innerHTML = `<img src="${COVER}" alt="ISALONE Drop 001">`;
+  const c = $("#cover img");
+  c.addEventListener("error", ()=>{ $("#cover").innerHTML = ""; });
+  c.addEventListener("click", ()=>{
+    $("#lbImgs").innerHTML = `<img class="on" src="${COVER}" alt="ISALONE Drop 001">`;
+    $("#lbTitle").textContent = "ISALONE — Drop 001"; $("#lbCount").textContent = "";
+    $("#lbShop").href = "pro.html"; all = []; at = -1; 
+    $("#lb").classList.add("on"); $("#lb").setAttribute("aria-hidden","false"); document.body.classList.add("lock");
+  });
+}
+
+$("#chaptersNav").innerHTML = LOOKS.map((l,i)=>`<a href="#look-${i+1}">${two(i+1)} ${esc(l.short || l.name)}</a>`).join("");
+
+// fade photos in on scroll
+const io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } }),{threshold:.12});
+
+// show photos as they load; drop names that don't exist, and whole chapters that end up empty
+function renumber(ch){
+  const shots = [...ch.querySelectorAll(".shot:not(.wait)")];
+  shots.forEach((f,k)=>{ const t=f.querySelector(".k"); if(t) t.textContent = t.textContent.replace(/\d+\/\d+$/, `${k+1}/${shots.length}`); });
+}
+document.querySelectorAll(".shot img").forEach(img=>{
+  const show = ()=>{ const f = img.closest(".shot"); if(!f) return; f.classList.remove("wait"); io.observe(f); renumber(f.closest(".chapter")); };
+  if (img.complete && img.naturalWidth) show(); else img.addEventListener("load", show);
+  img.addEventListener("error", ()=>{
+    const fig = img.closest(".shot"), ch = fig.closest(".chapter");
+    fig.remove(); renumber(ch);
+    if (!ch.querySelector(".shot")){ $(`.chapters-nav a[href="#${ch.id}"]`)?.remove(); ch.remove(); }
+  });
+});
+
+
+/* ---------- lightbox ---------- */
+let all = [], at = 0;
+function collect(){
+  all = [...document.querySelectorAll(".shot:not(.wait)")].map(f=>({ src:f.dataset.src, look:+f.dataset.look }));
+}
+function show(n){
+  if(!all.length){ collect(); if(!all.length) return; }
+  at = (n + all.length) % all.length;
+  const cur = all[at], l = LOOKS[cur.look];
+  $("#lbImgs").innerHTML = `<img src="${cur.src}" alt="${esc(l.name)}">`;
+  const im = $("#lbImgs img"); requestAnimationFrame(()=>requestAnimationFrame(()=>im.classList.add("on")));
+  $("#lbTitle").textContent = `Look ${two(cur.look+1)} — ${l.name}`;
+  $("#lbCount").textContent = `${at+1} / ${all.length}`;
+  $("#lbShop").href = shopLink(l.product);
+  // preload neighbours
+  [at+1, at-1].forEach(k=>{ const s = all[(k+all.length)%all.length]; if(s) new Image().src = s.src; });
+}
+function openLB(src){
+  collect();
+  const k = all.findIndex(a=>a.src===src);
+  show(k < 0 ? 0 : k);
+  $("#lb").classList.add("on"); $("#lb").setAttribute("aria-hidden","false");
+  document.body.classList.add("lock");
+}
+function closeLB(){ $("#lb").classList.remove("on"); $("#lb").setAttribute("aria-hidden","true"); document.body.classList.remove("lock"); }
+
+$("#chapters").addEventListener("click", e=>{
+  const fig = e.target.closest(".shot"); if(fig) openLB(fig.dataset.src);
+});
+$("#lbClose").onclick = closeLB;
+$("#lbPrev").onclick = ()=>show(at-1);
+$("#lbNext").onclick = ()=>show(at+1);
+$("#lbImgs").onclick = ()=>show(at+1);
+let tx = 0;
+$("#lb").addEventListener("touchstart", e=>tx=e.touches[0].clientX, {passive:true});
+$("#lb").addEventListener("touchend", e=>{ const d=e.changedTouches[0].clientX-tx; if(Math.abs(d)>40) show(at+(d<0?1:-1)); });
+document.addEventListener("keydown", e=>{
+  if (e.key==="Escape"){ closeMenu(); closeLB(); return; }
+  if (!$("#lb").classList.contains("on")) return;
+  if (e.key==="ArrowRight") show(at+1);
+  if (e.key==="ArrowLeft")  show(at-1);
+});
+
+/* ---------- cart count (shared with pro.html and checkout.html) ---------- */
+function cartCount(){
+  let n = 0;
+  try { const c = JSON.parse(localStorage.getItem("isalone_cart")); if (Array.isArray(c)) n = c.reduce((s,i)=>s+(i.qty||1),0); } catch(e){}
+  $("#cartCount").textContent = n;
+}
+cartCount(); addEventListener("pageshow", cartCount); addEventListener("storage", cartCount);
+
+/* ---------- menu ---------- */
+function closeMenu(){ $("#menu").classList.remove("on"); $("#scrim").classList.remove("on"); }
+$("#openMenu").onclick = ()=>{ $("#menu").classList.add("on"); $("#scrim").classList.add("on"); };
+$("#scrim").onclick = closeMenu;
+document.querySelectorAll("[data-close], .menu-links a").forEach(b=>b.addEventListener("click", closeMenu));
+</script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<script>
+/* ISALONE password lock: without access, go back to the homepage to enter the password */
+(function(){ try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
+catch(e){ location.replace("index.html?locked"); } })();
+</script>
+<title>Checkout — ISALONE</title>
+<style>
+  :root{
+    --ink:#111;
+    --muted:#8a8a8a;
+    --line:#e3e3e3;
+    --line-strong:#111;
+    --bg:#fff;
+    --soft:#f6f6f6;
+    --error:#b3261e;
+    --track:.12em;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink)}
+  body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  .caps{text-transform:uppercase;letter-spacing:var(--track);font-size:11px}
+
+  /* ---------- Header (matches site) ---------- */
+  header{position:sticky;top:0;z-index:20;background:var(--bg);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 24px}
+  .burger{width:18px;display:grid;gap:4px;justify-self:start}
+  .burger span{height:1.5px;background:var(--ink)}
+  .logo{display:flex;justify-content:center;text-decoration:none}
+  .logo img{height:44px;width:auto;display:block}
+  .logo .wordmark{font-weight:800;letter-spacing:.3em;font-size:14px}
+  .cart-link{justify-self:end;text-decoration:none;font-weight:600}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1180px;margin:0 auto;padding:40px 24px 80px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:80px}
+  @media (max-width:860px){main{grid-template-columns:1fr;gap:40px;padding:20px 16px 60px}}
+
+  /* Steps */
+  .steps{display:flex;flex-wrap:wrap;gap:0;margin-bottom:44px}
+  .steps button{text-transform:inherit;letter-spacing:inherit;font-size:12px;padding:0 14px;border-left:1px solid var(--line);color:var(--muted);font-weight:500}
+  .steps button:first-child{padding-left:0;border-left:0}
+  .steps button.active{color:var(--ink);font-weight:700}
+  .steps button:disabled{cursor:default}
+
+  .panel{display:none}
+  .panel.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  h2.section{font-size:11px;font-weight:700;margin-bottom:18px}
+
+  /* ---------- Bag table ---------- */
+  .bag-head,.bag-row{display:grid;grid-template-columns:96px 1fr 90px 110px 90px;gap:16px;align-items:start}
+  .bag-head{padding-bottom:12px;border-bottom:1px solid var(--line-strong);font-weight:700}
+  .bag-head .p{grid-column:1 / 3}
+  .bag-row{padding:24px 0;border-bottom:1px solid var(--line)}
+  .thumb{width:96px;aspect-ratio:3/4;background:var(--soft);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:contain}
+  .item-brand{font-weight:700}
+  .item-name{margin-bottom:12px}
+  .meta{color:var(--ink)}
+  .meta b{font-weight:700}
+  .remove{margin-top:12px;font-weight:600;display:inline-flex;gap:6px;align-items:center}
+  .remove:hover{text-decoration:underline}
+  .qty{display:inline-flex;align-items:center;gap:14px}
+  .qty button{width:18px;height:18px;font-size:15px;line-height:1}
+  .num{text-align:right}
+  .mobile-only{display:none}
+  @media (max-width:640px){
+    .bag-head{display:none}
+    .bag-row{grid-template-columns:84px 1fr;gap:14px}
+    .thumb{width:84px}
+    .bag-row .col-price,.bag-row .col-qty,.bag-row .col-total{display:none}
+    .mobile-only{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  }
+  .empty{padding:60px 0;text-align:center;border-bottom:1px solid var(--line)}
+  .empty a{display:inline-block;margin-top:16px;font-weight:700}
+
+  /* ---------- Forms ---------- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+  .grid .full{grid-column:1 / -1}
+  @media (max-width:520px){.grid{grid-template-columns:1fr}}
+  .field label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500}
+  .field input,.field select{width:100%;height:46px;padding:0 14px;border:1px solid var(--line);border-radius:0;background:var(--bg);font:inherit;font-size:14px;color:var(--ink);outline:none;appearance:none}
+  .field select{background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;background-size:5px 5px;background-repeat:no-repeat}
+  .field input:focus,.field select:focus{border-color:var(--ink)}
+  .field.invalid input,.field.invalid select{border-color:var(--error)}
+  .field .err{display:none;color:var(--error);font-size:11px;margin-top:5px}
+  .field.invalid .err{display:block}
+  .block + .block{margin-top:36px}
+
+  .options{border:1px solid var(--line)}
+  .option{display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;border-top:1px solid var(--line)}
+  .option:first-child{border-top:0}
+  .option input{accent-color:var(--ink);width:16px;height:16px}
+  .option .grow{flex:1}
+  .option .sub{color:var(--muted);font-size:12px}
+  .option.selected{background:var(--soft)}
+
+  /* ---------- ABA KHQR ---------- */
+  .khqr-badge{font-size:10px;font-weight:800;letter-spacing:.08em;padding:3px 7px;background:#e1232e;color:#fff}
+  .khqr-badge.light{background:#fff;color:#e1232e}
+  .aba-box{margin-top:24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px}
+  .aba-box[hidden]{display:none}
+  .qr-card{width:100%;max-width:300px;border:1px solid var(--line);background:#fff}
+  .qr-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#e1232e;color:#fff;font-weight:700}
+  .qr-amount{font-size:26px;font-weight:800;padding:18px 16px 4px;letter-spacing:-.01em}
+  .qr-img{position:relative;padding:12px 24px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+  .qr-img img{width:100%;height:100%;object-fit:contain;display:block}
+  .qr-timer{padding:0 16px 16px;color:var(--muted)}
+  .qr-timer b{color:var(--ink)}
+  [hidden]{display:none !important}
+  .qr-steps{list-style:none;counter-reset:s;text-align:left;max-width:300px;width:100%;color:#555;display:grid;gap:8px}
+  .qr-steps li{counter-increment:s;display:flex;gap:10px}
+  .qr-steps li::before{content:"0" counter(s);color:var(--ink);font-weight:700}
+
+  /* ---------- Receipt ---------- */
+  .receipt{max-width:560px;border:1px solid var(--line);padding:32px;background:#fff}
+  @media (max-width:520px){.receipt{padding:22px 18px}}
+  .rc-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;border-bottom:1px solid var(--line-strong)}
+  .rc-brand{font-weight:800;letter-spacing:.3em;font-size:14px}
+  .rc-muted{color:var(--muted)}
+  .rc-thanks{padding:26px 0 22px}
+  .rc-thanks h2{font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;margin:6px 0 8px}
+  .rc-thanks p{color:#444}
+  .rc-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .rc-meta div{display:flex;flex-direction:column;gap:4px}
+  @media (max-width:520px){.rc-meta{grid-template-columns:1fr 1fr}}
+  .rc-item{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .rc-item .thumb{width:48px}
+  .rc-totals{padding:14px 0}
+  .rc-totals div{display:flex;justify-content:space-between;padding:6px 0}
+  .rc-totals .rc-total{font-weight:800;font-size:13px;border-top:1px solid var(--line-strong);margin-top:8px;padding-top:14px}
+  .rc-addr{padding-top:14px;border-top:1px solid var(--line);line-height:1.7}
+  .rc-foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);text-align:center}
+  .rc-actions{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-top:28px}
+  .rc-actions .back{align-self:flex-start;margin-top:8px}
+  .rc-hint{color:var(--muted);text-align:center;margin-top:2px}
+  @media print{
+    header,footer,.steps,aside,.no-print,.toast,.img-modal{display:none !important}
+    main{display:block;padding:0}
+    .receipt{border:0;max-width:none}
+  }
+
+  /* Image preview (for phones: long-press to save) */
+  .img-modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+  .img-modal img{max-width:100%;max-height:78vh;background:#fff;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  .img-modal p{color:#fff;text-align:center}
+  .img-modal .row{display:flex;gap:10px}
+  .img-modal a,.img-modal button{color:#fff;border:1px solid #fff;padding:10px 16px;font-weight:700;text-decoration:none}
+
+
+  /* Hold the receipt until the shop has the order */
+  body.order-holding [data-panel="4"] .receipt{display:none}
+  .order-hold{display:none;max-width:560px;border:1px solid var(--line);padding:56px 32px;text-align:center}
+  body.order-holding .order-hold{display:block}
+  .order-hold .spin{width:26px;height:26px;margin:0 auto 22px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .order-hold h3{font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .order-hold p{color:#555;margin-bottom:4px}
+  .order-hold.failed .spin{display:none}
+  .order-hold .btn{max-width:300px;margin:26px auto 0}
+  .order-hold .btn[hidden]{display:none}
+  .rc-sent{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--soft);font-weight:700}
+
+  .review{border:1px solid var(--line);margin-bottom:28px}
+  .review-row{display:grid;grid-template-columns:90px 1fr auto;gap:12px;padding:14px 16px;border-top:1px solid var(--line);align-items:start}
+  .review-row:first-child{border-top:0}
+  .review-row .k{color:var(--muted)}
+  .review-row button{font-weight:600;text-decoration:underline}
+
+  .nav-btns{display:flex;justify-content:space-between;align-items:center;margin-top:36px;gap:16px}
+  .back{font-weight:600}
+  .back:hover{text-decoration:underline}
+
+  /* ---------- Buttons (matches ADD TO CART) ---------- */
+  .btn{display:flex;justify-content:space-between;align-items:center;gap:20px;height:56px;padding:0 20px;background:var(--ink);color:#fff;font-weight:700;width:100%;transition:opacity .2s}
+  .btn:hover{opacity:.85}
+  .btn:disabled{background:#8c8c8c;cursor:not-allowed;opacity:1}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+  .btn.ghost:disabled{background:#fff;color:var(--muted);border-color:var(--line)}
+  .btn.inline{width:auto;min-width:260px}
+  @media (max-width:520px){.btn.inline{min-width:0;flex:1}}
+
+  /* ---------- Summary ---------- */
+  aside{position:sticky;top:96px;align-self:start}
+  @media (max-width:860px){aside{position:static}}
+  .sum-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:40px}
+  .sum-title h1{font-size:18px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+  .sum-title span{font-size:18px;font-weight:600}
+  .sum-line{display:flex;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--line-strong)}
+  .sum-line.total{font-weight:700}
+  .sum-items{margin-bottom:8px}
+  .sum-item{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:10px 0}
+  .sum-item .thumb{width:48px}
+  .sum-item small{color:var(--muted);display:block}
+  .promo{display:flex;gap:8px;padding:18px 0;border-bottom:1px solid var(--line-strong)}
+  .promo input{flex:1;height:42px;border:1px solid var(--line);padding:0 12px;font:inherit;outline:none}
+  .promo input:focus{border-color:var(--ink)}
+  .promo button{border:1px solid var(--ink);padding:0 16px;font-weight:700}
+  .promo-msg{font-size:11px;padding-top:8px;color:var(--muted)}
+  .terms{display:flex;gap:12px;align-items:flex-start;margin:44px 0 22px;cursor:pointer;line-height:1.9}
+  .terms input{margin-top:5px;accent-color:var(--ink);width:15px;height:15px;flex:none}
+  .terms a{text-underline-offset:3px}
+  .secure{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;color:var(--muted)}
+
+  /* ---------- Toast (matches "ADDED TO CART" bar) ---------- */
+  .toast{position:fixed;left:0;top:76px;background:var(--ink);color:#fff;padding:10px 18px;font-weight:700;transform:translateX(-105%);transition:transform .3s ease;z-index:30;max-width:90vw}
+  .toast.show{transform:none}
+
+
+  footer{border-top:1px solid var(--line);padding:22px 24px;color:var(--muted)}
+  .cart-link{white-space:nowrap}
+  @media (max-width:520px){
+    header{padding:14px 16px}
+    .logo img{height:36px;max-width:46vw;object-fit:contain}
+    .steps button{padding:0 8px;font-size:10px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  <a class="logo" href="index.html" aria-label="ISALONE home">
+    <!-- Swap for your logo file path -->
+    <img src="./img/logo.png" alt="ISALONE" onerror="this.outerHTML='<span class=&quot;wordmark&quot;>ISALONE</span>'">
+  </a>
+  <a class="cart-link caps" href="#" id="cartLink">Cart ( 0 )</a>
+</header>
+
+<div class="toast caps" id="toast"></div>
+
+<main>
+  <!-- ================= LEFT ================= -->
+  <section>
+    <nav class="steps caps" id="steps">
+      <button data-step="0" class="active">Bag</button>
+      <button data-step="1">Information</button>
+      <button data-step="2">Shipping</button>
+      <button data-step="3">Payment</button>
+    </nav>
+
+    <!-- STEP 0: BAG -->
+    <div class="panel active" data-panel="0">
+      <div class="bag-head caps">
+        <div class="p">Product</div>
+        <div>Price</div>
+        <div>Quantity</div>
+        <div class="num">Total</div>
+      </div>
+      <div id="bagRows"></div>
+    </div>
+
+    <!-- STEP 1: INFORMATION -->
+    <form class="panel" data-panel="1" id="infoForm" novalidate>
+      <div class="block">
+        <h2 class="section caps">Contact</h2>
+        <div class="grid">
+          <div class="field full"><label class="caps" for="email">Email</label><input id="email" type="email" autocomplete="email" required><div class="err">Enter a valid email</div></div>
+          <div class="field full"><label class="caps" for="phone">Phone</label><input id="phone" type="tel" autocomplete="tel" required><div class="err">Enter a phone number</div></div>
+        </div>
+      </div>
+      <div class="block">
+        <h2 class="section caps">Shipping address</h2>
+        <div class="grid">
+          <div class="field"><label class="caps" for="first">First name</label><input id="first" autocomplete="given-name" required><div class="err">Required</div></div>
+          <div class="field"><label class="caps" for="last">Last name</label><input id="last" autocomplete="family-name" required><div class="err">Required</div></div>
+          <div class="field full"><label class="caps" for="address">Address (house no., street)</label><input id="address" autocomplete="address-line1" placeholder="e.g. #12, St. 240" required><div class="err">Required</div></div>
+          <div class="field full"><label class="caps" for="address2">Sangkat / Khan, landmark (optional)</label><input id="address2" autocomplete="address-line2"></div>
+          <div class="field full"><label class="caps" for="province">Province</label>
+            <select id="province" autocomplete="address-level1" required>
+              <option selected>Phnom Penh</option>
+              <option>Banteay Meanchey</option>
+              <option>Battambang</option>
+              <option>Kampong Cham</option>
+              <option>Kampong Chhnang</option>
+              <option>Kampong Speu</option>
+              <option>Kampong Thom</option>
+              <option>Kampot</option>
+              <option>Kandal</option>
+              <option>Kep</option>
+              <option>Koh Kong</option>
+              <option>Kratie</option>
+              <option>Mondulkiri</option>
+              <option>Oddar Meanchey</option>
+              <option>Pailin</option>
+              <option>Preah Sihanouk</option>
+              <option>Preah Vihear</option>
+              <option>Prey Veng</option>
+              <option>Pursat</option>
+              <option>Ratanakiri</option>
+              <option>Siem Reap</option>
+              <option>Stung Treng</option>
+              <option>Svay Rieng</option>
+              <option>Takeo</option>
+              <option>Tbong Khmum</option>
+              <option value="__other">Other (type it)</option>
+            </select><div class="err">Select a province</div></div>
+          <div class="field full" id="provinceOtherWrap" hidden><label class="caps" for="provinceOther">Your province</label><input id="provinceOther" autocomplete="address-level1"><div class="err">Type your province</div></div>
+          <div class="field full"><label class="caps">Country</label><input value="Cambodia" disabled style="background:var(--soft);color:var(--muted)"></div>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button type="button" class="back caps" data-go="0">← Return to bag</button>
+        <button type="submit" class="btn inline caps"><span>Continue to shipping</span><span>→</span></button>
+      </div>
+    </form>
+
+    <!-- STEP 2: SHIPPING -->
+    <div class="panel" data-panel="2">
+      <div class="review caps" id="review2"></div>
+      <h2 class="section caps">Shipping method</h2>
+      <div class="options" id="shipOptions"></div>
+      <div class="nav-btns">
+        <button type="button" class="back caps" data-go="1">← Return to information</button>
+        <button type="button" class="btn inline caps" data-go="3"><span>Continue to payment</span><span>→</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 3: PAYMENT -->
+    <div class="panel" data-panel="3">
+      <div class="review caps" id="review3"></div>
+      <h2 class="section caps">Pay with ABA KHQR</h2>
+
+      <div class="aba-box">
+        <div class="qr-card">
+          <div class="qr-head"><span class="caps">ISALONE</span><span class="khqr-badge light">KHQR</span></div>
+          <div class="qr-amount" id="qrAmount">$0.00</div>
+          <div class="qr-img">
+            <!-- ABA KHQR (dual KHR/USD) — file: img/aba-qr.png -->
+            <img id="qrImg" src="./img/aba-qr.png" alt="ABA KHQR — pay to SAKADA PHAN">
+          </div>
+          <div class="qr-timer caps">Pay to <b>SAKADA PHAN</b></div>
+          <div class="qr-timer caps">Order no. <b id="qrOrderNo"></b></div>
+        </div>
+
+        <ol class="qr-steps caps">
+          <li><span>Open ABA Mobile or any KHQR bank app and scan</span></li>
+          <li><span>Enter exactly <b id="qrAmount2"></b> (USD). The name shown should be SAKADA PHAN</span></li>
+          <li><span>Put your order no. in the remark, then press Done</span></li>
+        </ol>
+
+        <button class="btn caps" id="paidBtn" style="max-width:300px"><span>Done, I've paid</span><span>→</span></button>
+      </div>
+
+      <div class="nav-btns" id="payNav">
+        <button type="button" class="back caps" data-go="2">← Return to shipping</button>
+      </div>
+    </div>
+
+    <!-- RECEIPT -->
+    <div class="panel" data-panel="4">
+      <div class="order-hold" id="orderHold" role="status" aria-live="polite">
+        <div class="spin"></div>
+        <h3 id="holdTitle">Sending your order…</h3>
+        <p class="caps rc-muted" id="holdText">Please keep this page open</p>
+        <button class="btn caps" id="holdRetry" type="button" hidden><span>Try again</span><span>↻</span></button>
+      </div>
+      <div class="receipt" id="receipt">
+        <div class="rc-top">
+          <div class="rc-brand">ISALONE</div>
+          <div class="caps rc-muted">Receipt</div>
+        </div>
+        <div class="rc-thanks">
+          <div class="caps rc-muted">Thank you, <span id="rcName"></span></div>
+          <h2>Order received</h2>
+          <p>We'll check your ABA payment and email you when your order ships.</p>
+        </div>
+        <div class="rc-meta caps">
+          <div><span class="rc-muted">Order no.</span><b id="rcOrder"></b></div>
+          <div><span class="rc-muted">Date</span><b id="rcDate"></b></div>
+          <div><span class="rc-muted">Payment</span><b>ABA KHQR</b></div>
+        </div>
+        <div class="rc-items" id="rcItems"></div>
+        <div class="rc-totals caps" id="rcTotals"></div>
+        <div class="rc-addr">
+          <div class="caps rc-muted">Ship to</div>
+          <div id="rcAddr"></div>
+        </div>
+        <div class="rc-foot caps">Keep this receipt · Show it if we ask about your order</div>
+
+        <div class="rc-actions no-print" data-html2canvas-ignore>
+          <div class="rc-sent caps" id="sentNote">✓ Your order has been sent to ISALONE</div>
+          <button class="btn ghost caps" id="dlPdf" type="button"><span>Download PDF</span><span>↓</span></button>
+          <button class="btn ghost caps" id="dlImg" type="button"><span>Save as image</span><span>↓</span></button>
+          <div class="rc-hint caps">Or just take a screenshot of this receipt</div>
+          <a class="back caps" href="pro.html">Continue shopping →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RIGHT: SUMMARY ================= -->
+  <aside id="summary">
+    <div class="sum-title"><h1>Order summary</h1><span id="sumCount">0</span></div>
+    <div class="sum-items" id="sumItems"></div>
+    <div class="promo">
+      <input id="promoInput" class="caps" placeholder="Discount code" aria-label="Discount code">
+      <button class="caps" id="promoBtn">Apply</button>
+    </div>
+    <div class="promo-msg caps" id="promoMsg"></div>
+    <div class="sum-line caps"><span>Subtotal</span><span id="sumSub">$0.00</span></div>
+    <div class="sum-line caps" id="discLine" style="display:none"><span>Discount</span><span id="sumDisc"></span></div>
+    <div class="sum-line caps"><span>Shipping</span><span id="sumShip">Calculated at checkout</span></div>
+    <div class="sum-line total caps"><span>Total</span><span id="sumTotal">$0.00</span></div>
+
+    <label class="terms caps">
+      <input type="checkbox" id="terms">
+      <span>I've read and accept the <a href="privacy.html">Privacy Policy</a> and the <a href="terms.html">Terms and Conditions</a></span>
+    </label>
+    <button class="btn caps" id="mainBtn" disabled><span id="mainLabel">Checkout</span><span id="mainAmt">$0.00</span></button>
+    <div class="secure caps">
+      <svg width="11" height="12" viewBox="0 0 11 12" fill="none"><rect x="1" y="5" width="9" height="6.5" stroke="currentColor"/><path d="M3 5V3.5a2.5 2.5 0 0 1 5 0V5" stroke="currentColor"/></svg>
+      Secure checkout
+    </div>
+  </aside>
+</main>
+
+<footer class="caps">© 2026 ISALONE</footer>
+
+<script src="checkout.js"></script>
+
+<!-- Receipt download (PDF / image) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  var receipt = document.getElementById("receipt");
+  var pdfBtn  = document.getElementById("dlPdf");
+  var imgBtn  = document.getElementById("dlImg");
+
+  function orderNo(){
+    var t = (document.getElementById("rcOrder").textContent || "").trim();
+    return t ? t.replace(/[^\w-]+/g, "") : "order";
+  }
+
+  // Render the receipt to a canvas (buttons are skipped via data-html2canvas-ignore)
+  function capture(){
+    return html2canvas(receipt, {
+      scale: Math.max(2, window.devicePixelRatio || 1),
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      onclone: function(doc){
+        var r = doc.getElementById("receipt");
+        r.style.maxWidth = "560px";
+        r.style.width = "560px";
+        r.style.padding = "32px";
+        // html2canvas ignores object-fit, so draw thumbnails as contained backgrounds
+        r.querySelectorAll(".thumb img").forEach(function(img){
+          var box = img.parentNode;
+          box.style.backgroundImage = "url('" + img.src + "')";
+          box.style.backgroundSize = "contain";
+          box.style.backgroundPosition = "center";
+          box.style.backgroundRepeat = "no-repeat";
+          img.style.visibility = "hidden";
+        });
+      }
+    });
+  }
+
+  function busy(btn, on, label){
+    btn.disabled = on;
+    btn.firstElementChild.textContent = on ? "Preparing…" : label;
+  }
+
+  function download(href, name){
+    var a = document.createElement("a");
+    a.href = href; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  function showImage(dataUrl, name){
+    var m = document.createElement("div");
+    m.className = "img-modal";
+    m.innerHTML =
+      '<img alt="ISALONE receipt">' +
+      '<p class="caps">Press and hold the image to save it to Photos</p>' +
+      '<div class="row caps"><a download>Download</a><button type="button">Close</button></div>';
+    m.querySelector("img").src = dataUrl;
+    var a = m.querySelector("a"); a.href = dataUrl; a.download = name;
+    m.querySelector("button").onclick = function(){ m.remove(); };
+    m.onclick = function(e){ if (e.target === m) m.remove(); };
+    document.body.appendChild(m);
+  }
+
+  imgBtn.addEventListener("click", function(){
+    if (!window.html2canvas) return window.print();
+    busy(imgBtn, true);
+    capture().then(function(canvas){
+      var url = canvas.toDataURL("image/png");
+      var name = "ISALONE-receipt-" + orderNo() + ".png";
+      if (isIOS) showImage(url, name);   // iPhone can't save a download to Photos directly
+      else download(url, name);
+    }).catch(function(){ window.print(); })
+      .finally(function(){ busy(imgBtn, false, "Save as image"); });
+  });
+
+  pdfBtn.addEventListener("click", function(){
+    if (!window.html2canvas || !window.jspdf) return window.print();
+    busy(pdfBtn, true);
+    capture().then(function(canvas){
+      var jsPDF = window.jspdf.jsPDF;
+      // A5-width page, height fitted to the receipt so it's one clean page
+      var pageW = 420, margin = 24;
+      var imgW = pageW - margin * 2;
+      var imgH = canvas.height * imgW / canvas.width;
+      var pdf = new jsPDF({ unit: "pt", format: [pageW, imgH + margin * 2] });
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, imgW, imgH);
+      pdf.setProperties({ title: "ISALONE receipt " + orderNo() });
+      pdf.save("ISALONE-receipt-" + orderNo() + ".pdf");
+    }).catch(function(){ window.print(); })
+      .finally(function(){ busy(pdfBtn, false, "Download PDF"); });
+  });
+})();
+</script>
+
+<!-- Send the order to the seller (EmailJS) BEFORE the customer sees the receipt -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+(function(){
+  /* ===== SETTINGS — seller order email (EmailJS) ===== */
+  var EMAILJS_PUBLIC_KEY  = "SmoLQAp-ij_aoJbAd";
+  var EMAILJS_SERVICE_ID  = "service_y6509uw";
+  var EMAILJS_TEMPLATE_ID = "template_l1sw4z3";
+  var PRINT_PAGE          = "print.html";
+  /* ==================================================== */
+
+  var paidBtn = document.getElementById("paidBtn");
+  var hold    = document.getElementById("orderHold");
+  var title   = document.getElementById("holdTitle");
+  var text    = document.getElementById("holdText");
+  var retry   = document.getElementById("holdRetry");
+  if (!paidBtn || !hold) return;
+
+  function txt(id){ var el = document.getElementById(id); return el ? (el.innerText || el.textContent || "").trim() : ""; }
+  function val(id){ var el = document.getElementById(id); return el ? (el.value || "").trim() : ""; }
+  function esc(s){
+    return String(s || "").replace(/[&<>"']/g, function(c){
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Everything the customer sees on the receipt
+  function readOrder(){
+    var items = [];
+    document.querySelectorAll("#rcItems .rc-item").forEach(function(row){
+      var cells = Array.prototype.filter.call(row.children, function(c){ return !c.classList.contains("thumb"); });
+      if (!cells.length) return;
+      var name  = (cells[0].innerText || "").replace(/\s*\n\s*/g, " · ").trim();
+      var price = cells.length > 1 ? (cells[cells.length - 1].innerText || "").trim() : "";
+      items.push([name, price]);
+    });
+    var totals = [];
+    document.querySelectorAll("#rcTotals > div").forEach(function(row){
+      var p = row.children;
+      if (p.length >= 2) totals.push([p[0].innerText.trim(), p[p.length - 1].innerText.trim()]);
+    });
+    var ship = document.querySelector("#shipOptions .option.selected");
+    return {
+      o: txt("rcOrder"), d: txt("rcDate"), n: txt("rcName"),
+      ph: val("phone"), em: val("email"),
+      items: items, tot: totals,
+      ship: ship ? ship.innerText.replace(/\s*\n\s*/g, " · ").trim() : "",
+      addr: txt("rcAddr")
+    };
+  }
+
+  function encode(o){
+    var bytes = new TextEncoder().encode(JSON.stringify(o)), s = "";
+    bytes.forEach(function(b){ s += String.fromCharCode(b); });
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function itemsHtml(o){
+    return o.items.map(function(it, i){
+      var bg = i % 2 ? "#fafafa" : "#ffffff";
+      return '<tr style="background:' + bg + '">' +
+        '<td style="padding:12px 14px;border-bottom:1px solid #eeeeee;font-size:14px;color:#111111">' + esc(it[0]) + '</td>' +
+        '<td align="right" style="padding:12px 14px;border-bottom:1px solid #eeeeee;font-size:14px;color:#111111;white-space:nowrap">' + esc(it[1]) + '</td></tr>';
+    }).join("");
+  }
+  function totalsHtml(o){
+    return o.tot.map(function(t, i, a){
+      var last = i === a.length - 1;
+      var st = last
+        ? "padding:14px;font-size:16px;font-weight:800;color:#111111;border-top:2px solid #111111"
+        : "padding:6px 14px;font-size:13px;color:#555555";
+      return '<tr><td style="' + st + '">' + esc(t[0]) + '</td>' +
+        '<td align="right" style="' + st + ';white-space:nowrap">' + esc(t[1]) + '</td></tr>';
+    }).join("");
+  }
+  function receiptText(o){
+    var L = ["ISALONE — RECEIPT", "Order no.: " + o.o, "Date: " + o.d, "Payment: ABA KHQR", "",
+             "Customer: " + o.n, "Phone: " + o.ph, "Email: " + o.em, "", "ITEMS"];
+    o.items.forEach(function(it){ L.push("• " + it[0] + "  —  " + it[1]); });
+    L.push("");
+    o.tot.forEach(function(t){ L.push(t[0] + ": " + t[1]); });
+    if (o.ship) L.push("Shipping method: " + o.ship);
+    L.push("", "SHIP TO", o.addr);
+    return L.join("\n");
+  }
+
+  // Remember orders already sent (so a refresh/retry never emails twice)
+  function wasSent(no){ try { return (sessionStorage.getItem("isalone_sent") || "").split(",").indexOf(no) > -1; } catch(e){ return false; } }
+  function markSent(no){ try { var a = (sessionStorage.getItem("isalone_sent") || "").split(",").filter(Boolean); a.push(no); sessionStorage.setItem("isalone_sent", a.join(",")); } catch(e){} }
+
+  function showReceipt(){ document.body.classList.remove("order-holding"); hold.classList.remove("failed"); }
+  function failed(){
+    hold.classList.add("failed");
+    title.textContent = "We couldn't send your order";
+    text.textContent = "Check your internet connection, then try again";
+    retry.hidden = false;
+  }
+  function sending(){
+    hold.classList.remove("failed");
+    title.textContent = "Sending your order…";
+    text.textContent = "Please keep this page open";
+    retry.hidden = true;
+  }
+
+  function send(){
+    var o = readOrder();
+    if (o.o && wasSent(o.o)) return showReceipt();
+    if (!window.emailjs) return failed();
+    sending();
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      order_no:     o.o,
+      order_date:   o.d,
+      customer:     o.n,
+      phone:        o.ph,
+      email:        o.em,
+      total:        o.tot.length ? o.tot[o.tot.length - 1][1] : "",
+      shipping_method: o.ship,
+      items:        o.items.map(function(it){ return it[0] + "  —  " + it[1]; }).join("\n"),
+      address:      o.addr,
+      receipt:      receiptText(o),
+      items_html:   itemsHtml(o),
+      totals_html:  totalsHtml(o),
+      address_html: esc(o.addr).replace(/\n/g, "<br>"),
+      logo_url:     new URL("img/logo.png", location.href).href,
+      print_link:   new URL(PRINT_PAGE, location.href).href + "#" + encode(o)
+    }, { publicKey: EMAILJS_PUBLIC_KEY }).then(function(){
+      if (o.o) markSent(o.o);
+      showReceipt();
+    }).catch(function(err){
+      console.error("EmailJS:", err);
+      failed();
+    });
+  }
+
+  retry.addEventListener("click", send);
+
+  // Runs BEFORE checkout.js handles the click: hide the receipt straight away,
+  // wait until checkout.js has filled it in, then email the seller.
+  paidBtn.addEventListener("click", function(){
+    document.body.classList.add("order-holding");
+    sending();
+    var tries = 0;
+    (function wait(){
+      var panel = document.querySelector('[data-panel="4"]');
+      var ready = panel && panel.classList.contains("active") && txt("rcOrder") && document.querySelector("#rcItems .rc-item");
+      if (ready) return send();
+      if (++tries > 50){                       // checkout.js didn't move on (e.g. form problem)
+        if (!(panel && panel.classList.contains("active"))) document.body.classList.remove("order-holding");
+        else send();
+        return;
+      }
+      setTimeout(wait, 100);
+    })();
+  }, true);
+})();
+</script>
+</body>
+</html>

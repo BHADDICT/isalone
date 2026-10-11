@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+/* ISALONE password lock: without access, go back to the homepage to enter the password */
+(function(){ try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
+catch(e){ location.replace("index.html?locked"); } })();
+</script>
+<title>ISALONE</title>
+<style>
+  :root{
+    --black:#111;
+    --grey:#9a9a9a;
+    --mid:#555;
+    --light:#f4f4f4;
+    --line:#e6e6e6;
+    --font:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#fff;color:var(--black);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  body.lock{overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-transform:inherit;letter-spacing:inherit}
+  img{display:block}
+  .tiny{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+  .muted{color:var(--grey)}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+    padding:18px 32px;
+  }
+  .h-left,.h-right{display:flex;gap:28px;align-items:center}
+  .h-right{justify-content:flex-end}
+  .h-left button{display:flex;align-items:center;gap:8px}
+  .logo img{height:46px;width:auto}
+  .ico{width:12px;height:12px}
+  .bagcount{display:inline-block;min-width:1ch;transition:transform .3s var(--ease)}
+  .bagcount.bump{transform:scale(1.6)}
+
+  /* ---------- GRID (3 products) ---------- */
+  .grid{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:32px;padding:24px 32px 120px;
+  }
+
+  /* ---------- LOOKBOOK ---------- */
+  .look{padding:0 0 100px}
+  .look-head{display:flex;justify-content:space-between;padding:0 32px 18px}
+  .look-track{
+    display:flex;gap:12px;overflow-x:auto;padding:0 32px;scroll-snap-type:x mandatory;
+    scrollbar-width:none;cursor:grab;
+  }
+  .look-track::-webkit-scrollbar{display:none}
+  .look-track img{
+    height:min(78vh,760px);width:auto;flex:none;scroll-snap-align:start;object-fit:cover;
+    transition:opacity .4s;
+  }
+  .look-track:hover img{opacity:.55}
+  .look-track img:hover{opacity:1}
+  .card{position:relative;opacity:0;transform:translateY(24px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+  .card.in{opacity:1;transform:none}
+  .card:nth-child(2){transition-delay:.12s}
+  .card:nth-child(3){transition-delay:.24s}
+
+  .media{
+    position:relative;aspect-ratio:3/4;background:#fff;overflow:hidden;cursor:pointer;
+  }
+  .media img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+    transition:opacity .6s var(--ease),transform 1.2s var(--ease);
+  }
+  .media img.hover{opacity:0;transform:scale(1.04)}
+  .card:hover .media img.hover,.card.flip .media img.hover{opacity:1;transform:scale(1)}
+  .card:hover .media img.main.has-hover,.card.flip .media img.main.has-hover{opacity:0;transform:scale(.98)}
+  .media.missing{background:var(--light)}
+  .media.missing img{display:none}
+
+  .num{position:absolute;top:14px;left:14px;z-index:2}
+  .view{
+    position:absolute;left:50%;bottom:18px;z-index:2;transform:translate(-50%,8px);
+    background:var(--black);color:#fff;padding:10px 16px;opacity:0;transition:all .35s var(--ease);
+  }
+  .card:hover .view{opacity:1;transform:translate(-50%,0)}
+
+  .info{padding-top:16px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .name{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mid);margin-top:5px}
+  .reveal{
+    display:grid;grid-template-rows:0fr;opacity:0;
+    transition:grid-template-rows .4s var(--ease),opacity .3s ease;
+  }
+  .reveal>div{overflow:hidden}
+  .card:hover .reveal,.card.open .reveal{grid-template-rows:1fr;opacity:1}
+  .sizes{display:flex;gap:22px;margin:20px 0 16px}
+  .sizes button{font-size:10px;color:var(--grey);letter-spacing:.05em;padding:2px 0;border-bottom:1px solid transparent;transition:color .2s}
+  .sizes button:hover{color:var(--black)}
+  .sizes button.sel{color:var(--black);border-color:var(--black)}
+  .sizes button.out{text-decoration:line-through;pointer-events:none;opacity:.45}
+  .brandmark{display:block;height:9px;width:auto}
+  .qv-side .brandmark{height:12px}
+
+  /* add to cart */
+  .actions{display:flex;gap:6px}
+  .cart-btn{
+    flex:1;position:relative;overflow:hidden;background:var(--black);color:#fff;
+    padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .cart-btn::before{
+    content:"";position:absolute;inset:0;background:#333;transform:translateX(-101%);
+    transition:transform .45s var(--ease);
+  }
+  .cart-btn:hover::before{transform:none}
+  .cart-btn span{position:relative;transition:transform .3s var(--ease)}
+  .cart-btn:hover .arrow{transform:translateX(4px)}
+  .cart-btn.need{background:#fff;color:var(--black);box-shadow:inset 0 0 0 1px var(--black)}
+  .cart-btn.need::before{display:none}
+  .cart-btn.done{background:var(--black)}
+  .wish{width:46px;flex:none;box-shadow:inset 0 0 0 1px var(--line);display:grid;place-items:center;transition:box-shadow .2s}
+  .wish:hover{box-shadow:inset 0 0 0 1px var(--black)}
+  .wish svg{width:14px;height:14px;fill:none;stroke:var(--black);stroke-width:1.3;transition:fill .2s}
+  .wish.on svg{fill:var(--black)}
+  @keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+  .sizes.shake{animation:shake .4s ease}
+  .sizes.shake button:not(.out){color:var(--black)}
+
+  /* ---------- QUICK VIEW ---------- */
+  .qv{
+    position:fixed;inset:0;z-index:60;background:#fff;
+    display:grid;grid-template-columns:88px 1fr 400px;
+    opacity:0;pointer-events:none;transition:opacity .45s var(--ease);
+  }
+  .qv.on{opacity:1;pointer-events:auto}
+  .qv-thumbs{
+    display:flex;flex-direction:column;justify-content:center;gap:10px;
+    padding:24px 0 24px 28px;overflow-y:auto;scrollbar-width:none;
+  }
+  .qv-thumbs::-webkit-scrollbar{display:none}
+  .qv-thumbs button{width:40px;aspect-ratio:3/4;flex:none;padding:2px;border:1px solid transparent;opacity:.55;transition:all .25s}
+  .qv-thumbs button:hover{opacity:1}
+  .qv-thumbs button.sel{border-color:var(--black);opacity:1}
+  .qv-thumbs img{width:100%;height:100%;object-fit:cover}
+  .qv-stage{position:relative;height:100vh;overflow:hidden;cursor:zoom-in}
+  .qv-stage img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+    opacity:0;transform:translateY(20px);transition:opacity .5s var(--ease),transform .7s var(--ease);
+  }
+  .qv-stage img.on{opacity:1;transform:none}
+  .qv-stage.zoom{cursor:zoom-out}
+  .qv-stage.zoom img.on{object-fit:cover;transform:scale(1.6)}
+  .qv-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;padding:20px 14px;opacity:.4;transition:opacity .2s}
+  .qv-arrow:hover{opacity:1}
+  .qv-arrow.prev{left:0}.qv-arrow.next{right:0}
+  .qv-counter{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2}
+  .qv-side{padding:90px 40px 48px;display:flex;flex-direction:column;overflow:auto}
+  .qv-top{position:absolute;top:24px;right:32px;z-index:3;display:flex;gap:26px;align-items:center}
+  .qv-top .bagcount{min-width:1ch}
+  .qv-after{display:flex;justify-content:space-between;margin-top:14px;opacity:0;transform:translateY(-4px);transition:all .3s var(--ease);pointer-events:none}
+  .qv-after.on{opacity:1;transform:none;pointer-events:auto}
+  .qv-after button{text-decoration:underline;text-underline-offset:3px}
+  .qv-side h2{font-size:22px;font-weight:700;letter-spacing:-.01em;text-transform:uppercase;margin:10px 0 6px}
+  .qv-side .desc{font-size:13px;line-height:1.7;color:var(--black);margin:0 0 22px;max-width:44ch}
+  .qv-side .desc ul{list-style:none}
+  .qv-side .desc li{position:relative;padding-left:16px}
+  .qv-side .desc li::before{content:"•";position:absolute;left:0;color:var(--black)}
+  .qv-side .desc .material{margin-top:18px}
+  .qv-side .desc a,.qv-side .desc .link{text-decoration:underline;text-underline-offset:3px;font-size:inherit;letter-spacing:0;text-transform:none;padding:0}
+  /* Balenciaga-style sections */
+  .info{margin-top:30px;border-bottom:1px solid var(--line)}
+  .acc{border-top:1px solid var(--line)}
+  .acc-h{display:flex;justify-content:space-between;align-items:center;width:100%;padding:18px 0;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:400;text-align:left}
+  .acc-h i{width:8px;height:8px;border-right:1.3px solid currentColor;border-bottom:1.3px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .35s var(--ease)}
+  .acc.open .acc-h i{transform:translateY(2px) rotate(-135deg)}
+  .acc-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
+  .acc-b>div{overflow:hidden}
+  .acc.open .acc-b{grid-template-rows:1fr}
+  .acc-row{display:flex;justify-content:space-between;padding:18px 0;border-top:1px solid var(--line);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .qv-side .sizes{margin:12px 0 30px}
+  .btn{width:100%;background:var(--black);color:#fff;padding:16px;transition:background .2s}
+  .btn:hover{background:#333}
+  .details{margin-top:28px;border-top:1px solid var(--line)}
+  .details>div,.details>button{display:flex;justify-content:space-between;width:100%;padding:14px 0;border-bottom:1px solid var(--line)}
+  .details>button:hover .arrow{transform:translateX(4px)}
+  .details .arrow{display:inline-block;transition:transform .3s var(--ease)}
+
+  /* size chart (inline, below the row) */
+  .chart{
+    display:grid;grid-template-rows:0fr;opacity:0;
+    transition:grid-template-rows .45s var(--ease),opacity .3s ease;border-bottom:1px solid transparent;
+  }
+  .chart>div{overflow:hidden;position:relative}
+  .chart.on{grid-template-rows:1fr;opacity:1;border-color:transparent;margin-bottom:18px}
+  .chart img{width:100%;display:block;padding:10px 0 14px}
+  .chart-x{position:absolute;top:10px;right:0;width:26px;height:26px;display:grid;place-items:center;
+    background:#fff;box-shadow:inset 0 0 0 1px var(--line);transition:box-shadow .2s}
+  .chart-x:hover{box-shadow:inset 0 0 0 1px var(--black)}
+  #qvChart .arrow{transition:transform .3s var(--ease)}
+  #qvChart.open .arrow{transform:rotate(90deg)}
+
+  /* ---------- PANELS ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .3s;z-index:70}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .panel{
+    position:fixed;top:0;bottom:0;width:min(400px,92vw);background:#fff;z-index:75;
+    padding:28px;transition:transform .45s var(--ease);overflow:auto;display:flex;flex-direction:column;
+  }
+  .panel.left{left:0;transform:translateX(-100%)}
+  .panel.right{right:0;transform:translateX(100%)}
+  .panel.on{transform:none}
+  .panel .close{position:absolute;top:24px;right:28px}
+  .panel h3{margin:4px 0 36px}
+  .menu-links a{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:9px 0;transition:padding .25s var(--ease)}
+  .menu-links a:hover{padding-left:8px}
+  .bag-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .bag-item .th{width:68px;aspect-ratio:3/4;background:var(--light);flex:none;overflow:hidden}
+  .bag-item .th img{width:100%;height:100%;object-fit:cover}
+  .bag-foot{margin-top:auto;padding-top:22px}
+  .bag-total{display:flex;justify-content:space-between;margin-bottom:16px}
+
+  .toast{
+    position:fixed;top:82px;right:32px;background:var(--black);color:#fff;padding:12px 16px;z-index:90;
+    opacity:0;transform:translateY(-6px);transition:all .3s;pointer-events:none;
+  }
+  .toast.on{opacity:1;transform:none}
+
+  footer{display:flex;justify-content:space-between;padding:28px 32px;border-top:1px solid var(--line)}
+  footer nav{display:flex;gap:24px}
+
+  @media (max-width:900px){
+    header{padding:14px 16px}
+    .h-left .lbl,.h-right .acc{display:none}
+    .grid{grid-template-columns:1fr;gap:56px;padding:16px 16px 80px}
+    .reveal{grid-template-rows:1fr;opacity:1}
+    .view{display:none}
+    .look-head{padding:0 16px 14px}
+    .look-track{padding:0 16px}
+    .look-track img{height:62vh}
+    .qv{display:flex;flex-direction:column;overflow:auto}
+    .qv-stage{order:1;height:72vh;flex:none}
+    .qv-thumbs{order:2;flex-direction:row;justify-content:flex-start;padding:12px 16px;overflow-x:auto;flex:none}
+    .qv-side{order:3;padding:20px 16px 48px}
+    .qv-top{top:16px;right:16px;gap:18px;background:rgba(255,255,255,.88);padding:8px 10px}
+    footer{flex-direction:column;gap:16px;padding:24px 16px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <button class="tiny" id="openMenu">
+      <svg class="ico" viewBox="0 0 12 12"><path d="M0 2h12M0 6h12M0 10h12" stroke="currentColor"/></svg>
+      <span class="lbl">Menu</span>
+    </button>
+  </div>
+  <a href="index.html" class="logo"><img src="./img/logo.png" alt="ISALONE"></a>
+  <div class="h-right">
+    <a href="#" class="tiny acc">Account</a>
+    <button class="tiny" id="openBag">Cart ( <span class="bagcount" id="bagCount">0</span> )</button>
+  </div>
+</header>
+
+<main class="grid" id="grid"></main>
+
+<section class="look" id="look">
+  <div class="look-head tiny"><span>Lookbook</span><span class="muted" id="lookCount"></span></div>
+  <div class="look-track" id="lookTrack"></div>
+</section>
+
+<footer class="tiny">
+  <span class="muted">© <span id="yr"></span> <span id="brandFoot"></span></span>
+  <nav><a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a><a href="#">Contact</a><a href="#">Shipping</a></nav>
+</footer>
+
+<!-- MENU -->
+<aside class="panel left" id="menu">
+  <button class="close tiny" data-close>Close</button>
+  <h3 class="tiny">Menu</h3>
+  <nav class="menu-links">
+    <a href="index.html">Home</a><a href="pro.html">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a><a href="index.html#about">About</a><a href="#">Contact</a>
+  </nav>
+</aside>
+
+<!-- BAG -->
+<aside class="panel right" id="bag">
+  <button class="close tiny" data-close>Close</button>
+  <h3 class="tiny">Cart</h3>
+  <div id="bagList"></div>
+  <div class="bag-foot">
+    <div class="bag-total tiny"><span>Subtotal</span><span id="bagTotal"></span></div>
+    <button class="btn tiny" id="goCheckout">Checkout</button>
+  </div>
+</aside>
+
+<!-- QUICK VIEW -->
+<section class="qv" id="qv" aria-hidden="true">
+  <div class="qv-top">
+    <button class="tiny" id="qvCart">Cart ( <span class="bagcount" id="qvCount">0</span> )</button>
+    <button class="qv-close tiny" id="qvClose">Close ✕</button>
+  </div>
+  <div class="qv-thumbs" id="qvThumbs"></div>
+  <div class="qv-stage" id="qvStage">
+    <div id="qvImgs"></div>
+    <button class="qv-arrow prev tiny" id="qvPrev" aria-label="Previous">←</button>
+    <button class="qv-arrow next tiny" id="qvNext" aria-label="Next">→</button>
+    <span class="qv-counter tiny muted" id="qvCounter"></span>
+  </div>
+  <div class="qv-side">
+    <div class="row tiny"><span id="qvBrand"></span><span id="qvPrice"></span></div>
+    <h2 id="qvName"></h2>
+    <div class="name" id="qvColor"></div>
+    <div class="tiny muted" style="margin-top:28px">Select size</div>
+    <div class="sizes" id="qvSizes"></div>
+    <div class="actions"><button class="cart-btn tiny" id="qvAdd"><span class="lbl">Add to cart</span><span class="arrow">→</span></button></div>
+    <div class="qv-after tiny" id="qvAfter">
+      <button type="button" id="qvViewCart">View cart</button>
+      <button type="button" id="qvCheckout">Checkout →</button>
+    </div>
+    <div class="info">
+      <div class="acc open">
+        <button class="acc-h" aria-expanded="true">Product details<i></i></button>
+        <div class="acc-b"><div><div class="desc" id="qvDesc"></div></div></div>
+      </div>
+      <div class="acc">
+        <button class="acc-h" aria-expanded="false">Size &amp; fit<i></i></button>
+        <div class="acc-b"><div>
+          <div class="desc"><ul id="qvFit"></ul></div>
+          <div class="chart" id="chart"><div>
+            <button class="chart-x tiny" id="chartClose" aria-label="Close size guide">✕</button>
+            <img id="chartImg" alt="Size guide">
+          </div></div>
+        </div></div>
+      </div>
+      <div class="acc-row"><span>Shipping</span><span class="muted">2–5 days</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="scrim" id="scrim"></div>
+<div class="toast tiny" id="toast"></div>
+
+<script>
+/* =========================================================
+   EDIT HERE
+   img     = main photo in the grid
+   hover   = photo shown on hover
+   gallery = extra photos for quick view (photoshoot, details, back…)
+             quick view shows: img, hover, then gallery
+   ========================================================= */
+const BRAND = "ISALONE";
+const BRAND_LOGO = "./img/isolaneblack.png";   // wordmark shown on cards + quick view
+const CURRENCY = "$";
+const SIZES = ["S","M","L"];
+const MODEL_NOTE = "Our model is 175 cm and is wearing a size M";   // shown under Size & fit
+
+const products = [
+  {
+    name:"212 Crest Oversized Fit Capri Sweatpants", price:41.99, color:"Black",
+    sizes:["S","M","L"], sizechart:"./img/sizechart-capri.jpg",
+    img:"./img/pro4.png", hover:"./img/pro3.png",
+    gallery:["./img/shoot1.jpg","./img/shoot11.jpg"],
+    details:[
+      "Oversized fit with wide, relaxed legs",
+      "Below the knee length",
+      "Elastic waistband",
+      "Side pockets and back welt pockets",
+      "Signature ISALONE crest on the leg",
+    ],
+    material:"100% French terry",
+    fit:"Oversized fit"
+  },
+  {
+    name:"Inverse Slim Fit Long Sleeve", price:29.99, color:"Black",
+    sizes:["S","M","L"], sizechart:"./img/sizechart-longsleeve.jpg",
+    img:"./img/pro1.png", hover:"./img/pro2.png",
+    gallery:["./img/shoot3.jpg","./img/shoot33.jpg","./img/shoot333.JPG"],
+    details:[
+      "Lightweight construction",
+      "Slim fit with room to move",
+      "Slightly extended sleeves that sit at the wrist",
+      "ISALONE logo at the centre of the chest",
+      "Contrasting vertical ISALONE artwork on the back",
+    ],
+    material:"100% cotton",
+    fit:"Slim fit"
+  },
+  {
+    name:"Onyx Oversized Fit Hoodie", price:39.99, color:"Black",
+    sizes:["S","M","L"], sizechart:"./img/size.jpg",
+    img:"./img/hoodie.png", hover:"./img/hoodie3.png",
+    gallery:["./img/shoot2.jpg","./img/shoot22.jpg","./img/shoot2222.jpg"],
+    details:[
+      "Medium weight construction",
+      "Oversized fit with dropped shoulders",
+      "Ribbed cuffs and hem",
+      "Front kangaroo pocket",
+      "Distressed ISALONE crest on the front",
+      "Subtle ISALONE detailing at the top of the hood",
+    ],
+    material:"100% French terry",
+    fit:"Oversized fit"
+  },
+];
+
+/* Lookbook strip under the products — photoshoot images. Leave [] to hide. */
+const LOOKBOOK = [
+  "./img/shoot.jpg",
+  "./img/shoot1.jpg","./img/shoot11.jpg",                          // capri
+  "./img/shoot3.jpg","./img/shoot33.jpg","./img/shoot333.JPG",     // long sleeve
+  "./img/shoot2.jpg","./img/shoot22.jpg","./img/shoot2222.jpg",    // hoodie
+];
+
+/* ---------- setup ---------- */
+const $ = s => document.querySelector(s);
+const fmt = n => `${CURRENCY}${n.toFixed(2)}`;
+/* Cart is saved in the browser under "isalone_cart" so checkout.html can read it.
+   Item shape: { id, name, price, size, color, qty, image } */
+const CART_KEY = "isalone_cart";
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+function loadBag(){ try{ const v = JSON.parse(localStorage.getItem(CART_KEY)); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+function saveBag(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(bag)); }catch(e){} }
+let bag = loadBag();
+const mark = (cls="brandmark") => `<img class="${cls}" src="${BRAND_LOGO}" alt="${BRAND}">`;
+$("#brandFoot").textContent = BRAND;
+$("#yr").textContent = new Date().getFullYear();
+
+/* ---------- lookbook ---------- */
+if(!LOOKBOOK.length){ $("#look").remove(); }
+else{
+  $("#lookTrack").innerHTML = LOOKBOOK.map((src,k)=>`<img src="${src}" alt="Lookbook ${k+1}" loading="lazy" onerror="this.remove();lookCounter()">`).join("");
+  window.lookCounter = ()=>{ const n=$("#lookTrack").children.length; n ? $("#lookCount").textContent=`${n} look${n===1?"":"s"}` : $("#look").remove(); };
+  lookCounter();
+  // drag to scroll on desktop
+  const t=$("#lookTrack"); let down=false,sx=0,sl=0;
+  t.addEventListener("mousedown",e=>{down=true;sx=e.pageX;sl=t.scrollLeft;t.style.scrollSnapType="none";t.style.cursor="grabbing";});
+  addEventListener("mouseup",()=>{if(!down)return;down=false;t.style.scrollSnapType="";t.style.cursor="";});
+  t.addEventListener("mousemove",e=>{if(!down)return;e.preventDefault();t.scrollLeft=sl-(e.pageX-sx);});
+  t.addEventListener("dragstart",e=>e.preventDefault());
+}
+
+const sizeBtns = p => SIZES.map(s=>`<button data-size="${s}" class="${p.sizes.includes(s)?"":"out"}">${s}</button>`).join("");
+
+/* ---------- grid ---------- */
+$("#grid").innerHTML = products.map((p,i)=>`
+  <article class="card" data-i="${i}">
+    <div class="media" data-open>
+      <span class="num tiny muted">${String(i+1).padStart(2,"0")}</span>
+      <img class="main ${p.hover?"has-hover":""}" src="${p.img}" alt="${p.name}"
+           onerror="this.parentNode.classList.add('missing')">
+      ${p.hover?`<img class="hover" src="${p.hover}" alt="${p.name} — alternate view">`:""}
+      <span class="view tiny">Quick view</span>
+    </div>
+    <div class="info">
+      <div class="row tiny">${mark()}<span>${fmt(p.price)}</span></div>
+      <div class="name">${p.name}</div>
+      <div class="reveal"><div>
+        <div class="sizes">${sizeBtns(p)}</div>
+        <div class="actions">
+          <button class="cart-btn tiny" data-buy><span class="lbl">Add to cart</span><span class="arrow">→</span></button>
+          <button class="wish" data-wish aria-label="Wishlist"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+        </div>
+      </div></div>
+    </div>
+  </article>`).join("");
+
+// fade cards in on scroll
+const io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.15});
+document.querySelectorAll(".card").forEach(c=>io.observe(c));
+
+// touch devices: first tap shows the hover image, second tap opens quick view
+const touch = matchMedia("(hover: none)").matches;
+
+$("#grid").addEventListener("click", e=>{
+  const card = e.target.closest(".card"); if(!card) return;
+  const i = +card.dataset.i, p = products[i];
+
+  if(e.target.closest("[data-open]")){
+    if(touch && !card.classList.contains("flip") && p.hover){ card.classList.add("flip"); return; }
+    openQV(i); return;
+  }
+  const sizeBtn = e.target.closest("[data-size]");
+  if(sizeBtn){
+    card.querySelectorAll(".sizes button").forEach(b=>b.classList.remove("sel"));
+    sizeBtn.classList.add("sel"); card.classList.add("open");
+    resetBtn(card.querySelector(".cart-btn"));
+  }
+  const buy = e.target.closest("[data-buy]");
+  if(buy) tryAdd(buy, card.querySelector(".sizes"), p);
+  const wish = e.target.closest("[data-wish]");
+  if(wish){ p.wish = !p.wish; wish.classList.toggle("on", p.wish); toast(p.wish ? "Added to wishlist" : "Removed from wishlist"); }
+});
+
+/* ---------- quick view ---------- */
+let qvIndex = 0, slide = 0, slides = [];
+function showSlide(n){
+  if(!slides.length) return;
+  slide = (n + slides.length) % slides.length;
+  document.querySelectorAll("#qvImgs img").forEach((im,k)=>im.classList.toggle("on",k===slide));
+  document.querySelectorAll("#qvThumbs button").forEach((b,k)=>b.classList.toggle("sel",k===slide));
+  const sel = $("#qvThumbs .sel"); sel && sel.scrollIntoView({block:"nearest",inline:"nearest"});
+  $("#qvCounter").textContent = `${slide+1} / ${slides.length}`;
+  $("#qvStage").classList.remove("zoom");
+  document.querySelectorAll("#qvImgs img").forEach(im=>im.style.objectPosition="");
+}
+function renderSlides(alt){
+  $("#qvImgs").innerHTML = slides.map(src=>`<img src="${src}" alt="${alt}">`).join("");
+  $("#qvThumbs").innerHTML = slides.map((src,k)=>`<button data-k="${k}" aria-label="Photo ${k+1}"><img src="${src}" alt=""></button>`).join("");
+  const multi = slides.length > 1;
+  $("#qvPrev").style.display = $("#qvNext").style.display = $("#qvCounter").style.display = multi ? "" : "none";
+  $("#qvThumbs").style.visibility = multi ? "" : "hidden";
+  showSlide(Math.min(slide, Math.max(slides.length-1,0)));
+}
+function openQV(i){
+  slide = 0;
+  qvIndex = i; const p = products[i];
+  slides = [...new Set([p.img, p.hover, ...(p.gallery||[])].filter(Boolean))];
+  renderSlides(p.name);
+  // drop any photo that fails to load, so there are no empty slides
+  slides.forEach(src=>{ const t=new Image(); t.onerror=()=>{ if(qvIndex!==i) return; slides=slides.filter(s=>s!==src); renderSlides(p.name); }; t.src=src; });
+  $("#qvBrand").innerHTML = mark();
+  $("#qvPrice").textContent = fmt(p.price);
+  $("#qvName").textContent = p.name;
+  $("#qvColor").textContent = p.color;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  $("#qvDesc").innerHTML =
+    (p.details && p.details.length ? `<ul>${p.details.map(d=>`<li>${esc(d)}</li>`).join("")}</ul>` : (p.desc ? `<p>${esc(p.desc)}</p>` : "")) +
+    (p.material ? `<p class="material">Main material: ${esc(p.material)}</p>` : "");
+  $("#qvFit").innerHTML =
+    (p.fit ? `<li>${esc(p.fit)}</li>` : "") +
+    (MODEL_NOTE ? `<li>${esc(MODEL_NOTE)}</li>` : "") +
+    (p.sizechart ? `<li>Consult our <button class="link" id="qvChart" aria-expanded="false">size guide.</button></li>` : "");
+  const sg = $("#qvChart"); if (sg) sg.onclick = ()=> $("#chart").classList.contains("on") ? closeChart() : openChart();
+  // reset sections: details open, size & fit closed
+  document.querySelectorAll("#qv .acc").forEach((a,k)=>{ a.classList.toggle("open", k===0); a.querySelector(".acc-h").setAttribute("aria-expanded", k===0); });
+  closeChart();
+  resetBtn($("#qvAdd"));
+  $("#qvAfter").classList.remove("on");
+  $("#qvSizes").innerHTML = sizeBtns(p);
+  $("#qv").classList.add("on"); $("#qv").setAttribute("aria-hidden","false");
+  document.body.classList.add("lock");
+}
+function closeQV(){ $("#qv").classList.remove("on"); $("#qv").setAttribute("aria-hidden","true"); document.body.classList.remove("lock"); }
+$("#qvClose").onclick = closeQV;
+$("#qvThumbs").onclick = e=>{ const b=e.target.closest("[data-k]"); b && showSlide(+b.dataset.k); };
+$("#qvPrev").onclick = e=>{ e.stopPropagation(); showSlide(slide-1); };
+$("#qvNext").onclick = e=>{ e.stopPropagation(); showSlide(slide+1); };
+// click image to zoom, move mouse to pan
+$("#qvStage").addEventListener("click",()=>{ if(!touch) $("#qvStage").classList.toggle("zoom"); });
+$("#qvStage").addEventListener("mousemove",e=>{
+  if(!$("#qvStage").classList.contains("zoom")) return;
+  const r=e.currentTarget.getBoundingClientRect();
+  const im=$("#qvImgs img.on"); if(im) im.style.objectPosition=`${(e.clientX-r.left)/r.width*100}% ${(e.clientY-r.top)/r.height*100}%`;
+});
+// wheel / swipe between photos
+let wheelLock=false;
+$("#qvStage").addEventListener("wheel",e=>{
+  if(wheelLock||Math.abs(e.deltaY)<20) return; e.preventDefault();
+  wheelLock=true; showSlide(slide+(e.deltaY>0?1:-1)); setTimeout(()=>wheelLock=false,550);
+},{passive:false});
+let tx=0;
+$("#qvStage").addEventListener("touchstart",e=>tx=e.touches[0].clientX,{passive:true});
+$("#qvStage").addEventListener("touchend",e=>{ const d=e.changedTouches[0].clientX-tx; if(Math.abs(d)>40) showSlide(slide+(d<0?1:-1)); });
+document.addEventListener("keydown",e=>{
+  if(!$("#qv").classList.contains("on")) return;
+  if(e.key==="ArrowDown"||e.key==="ArrowRight") showSlide(slide+1);
+  if(e.key==="ArrowUp"||e.key==="ArrowLeft") showSlide(slide-1);
+});
+$("#qvSizes").onclick = e=>{
+  if(!e.target.dataset.size) return;
+  $("#qvSizes").querySelectorAll("button").forEach(b=>b.classList.remove("sel"));
+  e.target.classList.add("sel"); resetBtn($("#qvAdd"));
+};
+$("#qvAdd").onclick = ()=>{
+  const before = bag.reduce((n,b)=>n+b.qty,0);
+  tryAdd($("#qvAdd"), $("#qvSizes"), products[qvIndex]);
+  if (bag.reduce((n,b)=>n+b.qty,0) > before) $("#qvAfter").classList.add("on");
+};
+$("#qvCart").onclick = ()=> openPanel("#bag");          // cart opens on top of quick view
+$("#qvViewCart").onclick = ()=> openPanel("#bag");
+$("#qvCheckout").onclick = ()=> $("#goCheckout").click();
+
+/* size chart — opens small, right below the row */
+function openChart(){
+  const p = products[qvIndex]; if(!p.sizechart) return;
+  $("#chartImg").src = p.sizechart; $("#chartImg").alt = `${p.name} size guide`;
+  $("#chart").classList.add("on"); const b=$("#qvChart"); b && b.setAttribute("aria-expanded","true");
+}
+function closeChart(){ $("#chart").classList.remove("on"); const b=$("#qvChart"); b && b.setAttribute("aria-expanded","false"); }
+// open / close the Product details and Size & fit sections
+document.querySelectorAll("#qv .acc-h").forEach(h => h.addEventListener("click", ()=>{
+  const a = h.parentNode, on = !a.classList.contains("open");
+  a.classList.toggle("open", on); h.setAttribute("aria-expanded", on);
+  if (!on && a.contains($("#chart"))) closeChart();
+}));
+$("#chartClose").onclick = closeChart;
+
+/* ---------- add to cart button ---------- */
+function resetBtn(btn){
+  if(!btn) return; clearTimeout(btn._t);
+  btn.classList.remove("need","done"); btn.querySelector(".lbl").textContent="Add to cart"; btn.querySelector(".arrow").textContent="→";
+}
+function tryAdd(btn, sizesEl, p){
+  const sel = sizesEl.querySelector(".sel");
+  if(!sel){
+    btn.classList.add("need"); btn.querySelector(".lbl").textContent="Select a size"; btn.querySelector(".arrow").textContent="↑";
+    sizesEl.classList.remove("shake"); void sizesEl.offsetWidth; sizesEl.classList.add("shake");
+    const card = btn.closest(".card"); card && card.classList.add("open");
+    return;
+  }
+  addToBag(p, sel.dataset.size);
+  btn.classList.remove("need"); btn.classList.add("done");
+  btn.querySelector(".lbl").textContent = `Added — ${sel.dataset.size}`; btn.querySelector(".arrow").textContent="✓";
+  clearTimeout(btn._t); btn._t = setTimeout(()=>resetBtn(btn), 1800);
+}
+
+/* ---------- cart ---------- */
+function addToBag(p,size){
+  const id = slug(p.name);
+  const line = bag.find(b=>b.id===id && b.size===size);
+  if(line) line.qty++;
+  else bag.push({ id, name:p.name, price:p.price, size, color:p.color, qty:1, image:p.img });
+  updateBag(); toast(`Added to cart — ${p.name} / ${size}`);
+  ["#bagCount","#qvCount"].forEach(id=>{ const c=$(id); c.classList.add("bump"); setTimeout(()=>c.classList.remove("bump"),300); });
+}
+function updateBag(){
+  saveBag();
+  $("#bagCount").textContent = $("#qvCount").textContent = bag.reduce((n,b)=>n+b.qty,0);
+  $("#bagList").innerHTML = bag.length ? bag.map((b,k)=>`
+    <div class="bag-item">
+      <div class="th"><img src="${b.image}" alt=""></div>
+      <div style="flex:1">
+        <div class="row tiny"><span>${b.name}</span><span>${fmt(b.price*b.qty)}</span></div>
+        <div class="name">Size ${b.size} · ${b.color}${b.qty>1?` · Qty ${b.qty}`:""}</div>
+        <button class="tiny muted" style="margin-top:14px" data-rm="${k}">Remove</button>
+      </div>
+    </div>`).join("") : `<p class="name">Your cart is empty</p>`;
+  $("#bagTotal").textContent = fmt(bag.reduce((s,b)=>s+b.price*b.qty,0));
+}
+$("#bagList").addEventListener("click",e=>{
+  if(e.target.dataset.rm!==undefined){ bag.splice(+e.target.dataset.rm,1); updateBag(); }
+});
+
+/* checkout: go to checkout.html (it reads the same saved cart) */
+$("#goCheckout").onclick = ()=>{
+  if(!bag.length){ toast("Your cart is empty"); return; }
+  location.href = "checkout.html";
+};
+// coming back from checkout (or another tab): refresh the cart from storage
+addEventListener("pageshow", ()=>{ bag = loadBag(); updateBag(); });
+addEventListener("storage", e=>{ if(e.key===CART_KEY){ bag = loadBag(); updateBag(); } });
+
+/* ---------- panels ---------- */
+function openPanel(id){ closeAll(); $("#toast").classList.remove("on"); $(id).classList.add("on"); $("#scrim").classList.add("on"); }
+function closeAll(){ document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on")); $("#scrim").classList.remove("on"); }
+$("#openMenu").onclick = ()=>openPanel("#menu");
+$("#openBag").onclick = ()=>openPanel("#bag");
+$("#scrim").onclick = closeAll;
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  if(document.querySelector(".panel.on")) return closeAll();      // cart/menu first
+  if($("#chart").classList.contains("on")) return closeChart();
+  closeQV();
+});
+
+/* ---------- toast ---------- */
+let tt;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("on"),1800); }
+
+updateBag();
+
+/* opened from the lookbook: pro.html?view=0 opens that product, pro.html?cart=1 opens the cart */
+(()=>{
+  const q = new URLSearchParams(location.search);
+  const v = parseInt(q.get("view"), 10);
+  if (!isNaN(v) && products[v]) openQV(v);
+  else if (q.has("cart")) openPanel("#bag");
+})();
+</script>
+</body>
+</html>

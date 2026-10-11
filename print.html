@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Print receipt — ISALONE</title>
+<style>
+  :root{--ink:#111;--muted:#8a8a8a;--line:#e3e3e3;--soft:#f6f6f6;--ok:#1e7d32;--err:#b3261e}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:13px;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased}
+  button,select{font:inherit;color:inherit}
+  .caps{text-transform:uppercase;letter-spacing:.12em;font-size:11px}
+  main{max-width:520px;margin:0 auto;padding:28px 16px 60px}
+  h1{font-size:14px;letter-spacing:.3em;font-weight:800;text-align:center;margin-bottom:24px}
+  .paper{background:var(--soft);padding:18px;display:flex;justify-content:center;margin-bottom:22px}
+  pre{background:#fff;padding:16px 14px;font:13px/1.45 "SF Mono",Menlo,Consolas,monospace;white-space:pre;box-shadow:0 1px 6px rgba(0,0,0,.08);overflow-x:auto}
+  .row{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+  select{height:40px;padding:0 10px;border:1px solid var(--line);background:#fff}
+  .btn{display:flex;justify-content:space-between;align-items:center;width:100%;height:56px;padding:0 20px;background:var(--ink);color:#fff;border:0;font-weight:700;cursor:pointer}
+  .btn:disabled{background:#8c8c8c;cursor:wait}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink);height:48px;margin-top:10px}
+  .status{min-height:18px;margin:14px 0 4px;text-align:center}
+  .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+  .note{color:#555;line-height:1.6;margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+  .note b{color:var(--ink)}
+  .empty{text-align:center;color:#555;line-height:1.7;padding:40px 0}
+  @media print{ main>*:not(.paper){display:none} .paper{background:none;padding:0} pre{box-shadow:none;padding:0;font-size:11px} @page{size:58mm auto;margin:2mm} }
+</style>
+</head>
+<body>
+<main>
+  <h1>ISALONE</h1>
+
+  <div id="app" hidden>
+    <div class="paper"><pre id="preview"></pre></div>
+
+    <div class="row">
+      <span class="caps">Paper width</span>
+      <select id="paper">
+        <option value="32">58 mm</option>
+        <option value="48">80 mm</option>
+      </select>
+    </div>
+
+    <button class="btn caps" id="printBtn"><span id="printLabel">Connect printer &amp; print</span><span>→</span></button>
+    <p class="status caps" id="status" role="status" aria-live="polite"></p>
+    <button class="btn ghost caps" id="copyBtn"><span>Copy receipt text</span><span>⧉</span></button>
+
+    <div class="note" id="note">
+      <b>How it works:</b> tap the black button, pick <b>MPT-III</b> from the list, and the receipt prints.
+      Keep the printer on and close to the phone. If it's connected in another app, disconnect it there first.
+      <br><br>
+      <b>iPhone:</b> Safari and Chrome on iPhone can't use Bluetooth printers. Open this link in the free
+      <b>Bluefy</b> browser app instead, or use an Android phone or Chrome on a computer.
+      You can also tap <b>Copy receipt text</b> and paste it into your printer's app.
+    </div>
+  </div>
+
+  <div class="empty" id="empty" hidden>
+    No order loaded.<br>Open this page from the <b>Print receipt</b> button in a new-order email.
+  </div>
+</main>
+
+<script>
+/* ---------- read the order from the link (#...) ---------- */
+function readOrder(){
+  try{
+    let b64 = location.hash.slice(1).replace(/-/g,'+').replace(/_/g,'/');
+    if(!b64) return null;
+    while(b64.length % 4) b64 += '=';
+    return JSON.parse(decodeURIComponent(escape(atob(b64))));
+  }catch(e){ return null; }
+}
+const O = readOrder();
+const $ = s => document.querySelector(s);
+if(!O){ $('#empty').hidden = false; } else { $('#app').hidden = false; }
+
+const money = n => '$' + Number(n||0).toFixed(2);
+// printers only know plain ASCII: drop accents/emoji/Khmer so nothing prints as garbage
+const ascii = s => String(s ?? '').normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,'-').replace(/[^\x20-\x7E]/g,'');
+
+/* ---------- build the receipt as lines ---------- */
+let W = 32;
+try{ const saved = localStorage.getItem('isalone_paper'); if(saved) W = +saved; }catch(e){}
+$('#paper').value = String(W);
+
+const center = s => { s = ascii(s).slice(0,W); const p = Math.floor((W - s.length)/2); return ' '.repeat(Math.max(0,p)) + s; };
+const lr = (l, r) => { l = ascii(l); r = ascii(r); const space = W - r.length - 1; if(l.length > space) l = l.slice(0, space); return l + ' '.repeat(W - l.length - r.length) + r; };
+const wrap = s => { s = ascii(s); const out = []; let line = ''; for(const w of s.split(/\s+/)){ if(!w) continue; if((line + ' ' + w).trim().length > W){ if(line) out.push(line); line = w.slice(0,W); } else line = (line + ' ' + w).trim(); } if(line) out.push(line); return out; };
+const rule = () => '-'.repeat(W);
+
+function receipt(){
+  if(!O) return { L: [], big: [] };
+  if(!O.i && O.items) return receiptFromCheckout();
+  if(!O.i) throw new Error('This order link is in a format the page does not recognise.');
+  const L = []; const big = [];   // big = indexes printed double size
+  const d = new Date(O.d);
+  big.push(L.length); L.push('ISALONE');
+  L.push(center('Order ' + O.n));
+  L.push(center(isNaN(d) ? '' : d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})));
+  L.push(rule());
+  for(const [name,size,qty,price] of O.i){
+    wrap(name).forEach(x => L.push(x));
+    L.push(lr(`  ${size}  x${qty}`, money(price*qty)));
+  }
+  L.push(rule());
+  L.push(lr('Subtotal', money(O.s)));
+  if(O.x) L.push(lr('Discount', '-' + money(O.x)));
+  L.push(lr('Delivery', money(O.h)));
+  big.push(L.length); L.push(lr('TOTAL', money(O.t)));
+  L.push(lr('Payment', 'ABA KHQR'));
+  L.push(rule());
+  L.push('SHIP TO');
+  const [name, phone, email, a1, a2, prov] = O.c;
+  [name, phone, a1, a2, prov ? prov + ', Cambodia' : 'Cambodia'].filter(Boolean).forEach(x => wrap(x).forEach(y => L.push(y)));
+  L.push(rule());
+  L.push(center('Thank you'));
+  L.push(center('@isalone_studio'));
+  return { L, big };
+}
+function receiptFromCheckout(){
+  const L = []; const big = [];
+  big.push(L.length); L.push('ISALONE');
+  if(O.o) L.push(center('Order ' + O.o));
+  if(O.d) L.push(center(O.d));
+  L.push(rule());
+  (O.items || []).forEach(([name, price]) => {
+    const lines = wrap(name);
+    if(!lines.length) lines.push('');
+    lines.forEach((x, k) => L.push(k === lines.length - 1 && price ? lr(x, price) : x));
+  });
+  L.push(rule());
+  (O.tot || []).forEach(([label, value], k, a) => {
+    if(k === a.length - 1) big.push(L.length);
+    L.push(lr(k === a.length - 1 ? String(label).toUpperCase() : label, value));
+  });
+  if(O.ship) wrap('Delivery: ' + O.ship).forEach(x => L.push(x));
+  L.push(lr('Payment', 'ABA KHQR'));
+  L.push(rule());
+  L.push('SHIP TO');
+  [O.n, O.ph].filter(Boolean).forEach(x => wrap(x).forEach(y => L.push(y)));
+  String(O.addr || '').split(/\n+/).forEach(x => wrap(x).forEach(y => L.push(y)));
+  L.push(rule());
+  L.push(center('Thank you'));
+  L.push(center('@isalone_studio'));
+  return { L, big };
+}
+function render(){
+  if(!O) return;
+  try{
+    const { L } = receipt();
+    $('#preview').textContent = L.map((x,i)=> i===0 ? center(x) : x).join('\n');
+    $('#printBtn').disabled = false;
+  }catch(e){
+    console.error(e);
+    $('#preview').textContent = "Couldn't read this order.\nOpen the page again from the\nPrint receipt button in the email.";
+    $('#printBtn').disabled = true;
+    setStatus(e.message || 'Order link not readable', 'err');
+  }
+}
+render();
+$('#paper').onchange = e => { W = +e.target.value; try{ localStorage.setItem('isalone_paper', W); }catch(e){} render(); };
+
+/* ---------- ESC/POS bytes ---------- */
+function escpos(){
+  const { L, big } = receipt();
+  const bytes = [0x1B,0x40];                         // init
+  const enc = s => Array.from(ascii(s)).map(c => c.charCodeAt(0));
+  L.forEach((line, i) => {
+    if(i === 0){                                     // brand: centered, double size, bold
+      bytes.push(0x1B,0x61,1, 0x1D,0x21,0x11, 0x1B,0x45,1, ...enc(line), 0x0A, 0x1D,0x21,0x00, 0x1B,0x45,0, 0x1B,0x61,0);
+    } else if(big.includes(i)){                      // total: bold
+      bytes.push(0x1B,0x45,1, ...enc(line), 0x0A, 0x1B,0x45,0);
+    } else {
+      bytes.push(...enc(line), 0x0A);
+    }
+  });
+  bytes.push(0x0A,0x0A,0x0A,0x0A, 0x1D,0x56,0x42,0x00);   // feed + cut (ignored if no cutter)
+  return new Uint8Array(bytes);
+}
+
+/* ---------- Bluetooth (Web Bluetooth, BLE) ---------- */
+// common BLE services used by ESC/POS thermal printers (MPT, Xprinter, Goojprt, PeriPage…)
+const SERVICES = [
+  '000018f0-0000-1000-8000-00805f9b34fb','0000ff00-0000-1000-8000-00805f9b34fb','0000ffe0-0000-1000-8000-00805f9b34fb',
+  '0000fee7-0000-1000-8000-00805f9b34fb','0000ae30-0000-1000-8000-00805f9b34fb','0000af30-0000-1000-8000-00805f9b34fb',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455','e7810a71-73ae-499d-8c15-faa9aef0c3f2','0000ffe5-0000-1000-8000-00805f9b34fb'
+];
+let device = null, writer = null;
+const setStatus = (msg, cls='') => { const s = $('#status'); s.textContent = msg; s.className = 'status caps ' + cls; };
+
+async function findWriter(server){
+  const services = await server.getPrimaryServices();
+  for(const svc of services){
+    let chars = [];
+    try{ chars = await svc.getCharacteristics(); }catch(e){ continue; }
+    const c = chars.find(c => c.properties.writeWithoutResponse) || chars.find(c => c.properties.write);
+    if(c) return c;
+  }
+  throw new Error('No writable channel found on this printer');
+}
+async function connect(){
+  if(!navigator.bluetooth) throw new Error('This browser has no Bluetooth. On iPhone use the Bluefy app.');
+  if(!device){
+    device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:SERVICES });
+    device.addEventListener('gattserverdisconnected', () => { writer = null; });
+  }
+  if(!device.gatt.connected || !writer){
+    setStatus('Connecting to ' + (device.name || 'printer') + '…');
+    const server = await device.gatt.connect();
+    writer = await findWriter(server);
+  }
+}
+async function send(data){
+  const CHUNK = 100;
+  for(let i = 0; i < data.length; i += CHUNK){
+    const part = data.slice(i, i + CHUNK);
+    if(writer.properties.writeWithoutResponse && writer.writeValueWithoutResponse) await writer.writeValueWithoutResponse(part);
+    else await writer.writeValue(part);
+    await new Promise(r => setTimeout(r, 20));   // give small printers time to keep up
+  }
+}
+$('#printBtn').onclick = async () => {
+  const b = $('#printBtn'); b.disabled = true;
+  try{
+    await connect();
+    setStatus('Printing…');
+    await send(escpos());
+    setStatus('Printed ✓', 'ok');
+    $('#printLabel').textContent = 'Print again';
+  }catch(err){
+    console.error(err);
+    if(err && err.name === 'NotFoundError') setStatus('No printer chosen.', 'err');
+    else setStatus(err.message || 'Could not print.', 'err');
+    writer = null;
+  }finally{ b.disabled = false; }
+};
+
+/* ---------- fallback: copy text for the printer's own app ---------- */
+$('#copyBtn').onclick = async () => {
+  const text = $('#preview').textContent;
+  try{ await navigator.clipboard.writeText(text); setStatus('Copied. Paste it into your printer app.', 'ok'); }
+  catch(e){ const r = document.createRange(); r.selectNode($('#preview')); getSelection().removeAllRanges(); getSelection().addRange(r); setStatus('Text selected. Tap Copy.', ''); }
+};
+if(!navigator.bluetooth && O) setStatus('Bluetooth not available in this browser', 'err');
+</script>
+</body>
+</html>
