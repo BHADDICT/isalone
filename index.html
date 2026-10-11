@@ -355,7 +355,7 @@ $("#lockForm").addEventListener("submit", async e => {
     lockPw.select();
   }
 });
-// links to the shop: go straight in with access, otherwise ask for the password
+
 document.querySelectorAll('a[href^="pro.html"], a[href^="lookbook.html"]').forEach(a => a.addEventListener("click", e => {
   if (hasAccess()) return;
   e.preventDefault(); closeMenu && closeMenu(); openLock();
