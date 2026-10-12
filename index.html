@@ -101,10 +101,24 @@
   }
   .hero-copy > *{opacity:0;transform:translateY(12px);animation:rise 1.2s var(--ease) forwards}
   .hero-copy > *:nth-child(2){animation-delay:.15s}
-  .hero-copy > *:nth-child(3){animation-delay:.4s}
-  .hero-copy > *:nth-child(4){animation-delay:.7s}
+  .hero-copy > *:nth-child(3){animation-delay:.3s}
+  .hero-copy > *:nth-child(4){animation-delay:.45s}
+  .hero-copy > *:nth-child(5){animation-delay:.6s}
+  .hero-copy > *:nth-child(6){animation-delay:.75s}
   .eyebrow{opacity:.85;letter-spacing:.24em;margin-bottom:-8px}
   @keyframes rise{to{opacity:1;transform:none}}
+
+  /* countdown */
+  .launch{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .countdown{display:flex;align-items:flex-start;gap:14px}
+  .cd-unit{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:54px}
+  .cd-num{font-size:34px;font-weight:300;letter-spacing:.02em;line-height:1;font-variant-numeric:tabular-nums}
+  .cd-lbl{opacity:.75;font-size:9px;letter-spacing:.18em}
+  .cd-sep{font-size:28px;font-weight:200;line-height:1;opacity:.5}
+  .cd-note{opacity:.8;letter-spacing:.2em}
+  /* after the countdown ends: hide countdown + password, keep the waitlist */
+  body.live .launch,body.live .lock{display:none}
+
   /* waitlist */
   .waitlist{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(420px,86vw)}
   .wl-label{opacity:.9}
@@ -123,7 +137,7 @@
   .wl-msg{min-height:14px;opacity:.9}
   .waitlist.done .wl-row{display:none}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
-  /* password lock */
+  /* password lock (early access before the countdown ends) */
   .lock{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(420px,86vw)}
   .lock-toggle{display:inline-flex;align-items:center;gap:8px;opacity:.8;transition:opacity .2s}
   .lock-toggle:hover{opacity:1}
@@ -175,11 +189,15 @@
   }
   /* phones: give the text room — headline on two lines, more space between blocks */
   @media (max-width:600px){
-    .hero-copy{width:100%;padding:0 28px;gap:34px}
-    .eyebrow{margin-bottom:-18px;letter-spacing:.28em}
+    .hero-copy{width:100%;padding:0 28px;gap:28px}
+    .eyebrow{margin-bottom:-14px;letter-spacing:.28em}
     .season{white-space:normal;font-size:min(34px,6.6vw);line-height:1.2}
     .season .l1,.season .l2{white-space:nowrap}
     .m-br{display:inline}
+    .countdown{gap:8px}
+    .cd-unit{min-width:46px}
+    .cd-num{font-size:28px}
+    .cd-sep{font-size:22px}
     .waitlist{width:100%;gap:16px}
     .wl-label{letter-spacing:.18em}
     .wl-row input[type=email]{height:52px;font-size:16px}   /* 16px stops iPhone zooming in */
@@ -188,9 +206,10 @@
     .lock-form input{height:52px;font-size:16px}
     .lock-form .cta{height:52px}
   }
-  @media (max-width:600px) and (max-height:640px){
-    .hero-copy{gap:24px}
+  @media (max-width:600px) and (max-height:700px){
+    .hero-copy{gap:18px}
     .season{font-size:min(26px,6.2vw)}
+    .cd-num{font-size:24px}
   }
   @media (prefers-reduced-motion:reduce){
     .hero-copy > *{animation:none;opacity:1;transform:none}
@@ -204,8 +223,8 @@
     <button class="tiny burger" id="openMenu" aria-label="Menu">
       <svg class="ico" viewBox="0 0 12 12"><path d="M0 2h12M0 6h12M0 10h12" stroke="currentColor"/></svg><span>Menu</span>
     </button>
-    <a href="#" class="tiny">Shop</a>
-    <a href="#" class="tiny">Collection</a>
+    <a href="pro.html" class="tiny">Shop</a>
+    <a href="pro.html" class="tiny">Collection</a>
     <a href="lookbook.html" class="tiny">Lookbook</a>
   </div>
   <a href="./" class="logo" aria-label="ISALONE home"><img src="./img/logo.png" alt="ISALONE logo"></a>
@@ -218,10 +237,24 @@
 <main class="hero" aria-label="ISALONE campaign">
   <video id="heroVideo" src="./img/vid.MP4" poster="./img/hero-poster.jpg" muted autoplay loop playsinline preload="auto" aria-hidden="true"></video>
   <div class="hero-copy">
-    <p class="tiny eyebrow">ISALONE — Drop 001</p>
+    <p class="tiny eyebrow" id="eyebrow">ISALONE — Drop 001</p>
     <h1 class="season"><span class="l1">When you wear this,</span><br class="m-br"> <span class="l2">you’ll always think about me.</span></h1>
+
+    <div class="launch" id="launch" aria-label="Time until Drop 001 opens">
+      <div class="countdown">
+        <div class="cd-unit"><span class="cd-num" id="cdD">00</span><span class="tiny cd-lbl">Days</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-num" id="cdH">00</span><span class="tiny cd-lbl">Hours</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-num" id="cdM">00</span><span class="tiny cd-lbl">Min</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-num" id="cdS">00</span><span class="tiny cd-lbl">Sec</span></div>
+      </div>
+      <p class="tiny cd-note">Opens 15 October · 12:00 PM</p>
+    </div>
+
     <form class="waitlist" id="waitlist" novalidate>
-      <label for="wlEmail" class="tiny wl-label">Join the waitlist</label>
+      <label for="wlEmail" class="tiny wl-label" id="wlLabel">Join the waitlist</label>
       <div class="wl-row">
         <input id="wlEmail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Your email" required>
         <input type="text" name="company" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -229,10 +262,11 @@
       </div>
       <p class="tiny wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
     </form>
+
     <div class="lock" id="lock">
       <button type="button" class="tiny lock-toggle" id="lockToggle" aria-expanded="false" aria-controls="lockForm">
         <svg viewBox="0 0 12 14" aria-hidden="true"><rect x="1" y="6" width="10" height="7" fill="none" stroke="currentColor"/><path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor"/></svg>
-        <span>Enter with password</span>
+        <span>Early access with password</span>
       </button>
       <form class="lock-form" id="lockForm" novalidate>
         <div class="wl-row">
@@ -251,7 +285,7 @@
   <button class="close tiny" data-close>Close</button>
   <h3 class="tiny">Menu</h3>
   <nav class="menu-links">
-    <a href="#">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a>
+    <a href="pro.html">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a>
     <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a>
   </nav>
 </aside>
@@ -260,6 +294,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
+
+/* ---------- LAUNCH TIME ----------
+   Countdown ends 15 October 2026, 12:00 PM Cambodia time (UTC+7).
+   After that, anyone can enter the shop without a password.
+   Use the SAME time in pro.html, lookbook.html and checkout.html. */
+const LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
+const isLive = () => Date.now() >= LAUNCH;
 
 /* ---------- video: fades in once it can play ---------- */
 const v = $("#heroVideo");
@@ -271,6 +312,26 @@ $("#toggleVideo").onclick = () => {
   if (v.paused) { v.play(); b.textContent = "Pause"; b.setAttribute("aria-label","Pause background video"); }
   else { v.pause(); b.textContent = "Play"; b.setAttribute("aria-label","Play background video"); }
 };
+
+/* ---------- COUNTDOWN ---------- */
+const pad = n => String(n).padStart(2, "0");
+let cdTimer = null;
+function goLive(){
+  document.body.classList.add("live");
+  $("#eyebrow").textContent = "ISALONE — Drop 001 · Now open";
+  if (cdTimer) clearInterval(cdTimer);
+}
+function tick(){
+  const diff = LAUNCH - Date.now();
+  if (diff <= 0) { goLive(); return; }
+  const s = Math.floor(diff / 1000);
+  $("#cdD").textContent = pad(Math.floor(s / 86400));
+  $("#cdH").textContent = pad(Math.floor(s % 86400 / 3600));
+  $("#cdM").textContent = pad(Math.floor(s % 3600 / 60));
+  $("#cdS").textContent = pad(s % 60);
+}
+tick();
+if (!isLive()) cdTimer = setInterval(tick, 1000);
 
 /* ---------- WAITLIST (EmailJS) ----------
    Fill these in from your EmailJS dashboard (see waitlist-setup.md).
@@ -324,7 +385,8 @@ wl.addEventListener("submit", async e => {
     remember(email);
     wlEmail.value = "";
     wlMsg.textContent = "Thank you. Check your inbox.";
-    if (hasAccess()) setTimeout(() => { location.href = PRODUCTS_PAGE; }, 1800);
+    // no redirect: before launch, show the password box so they enter the password next
+    if (!isLive()) setTimeout(openLock, 1200);
   } catch (err) {
     console.error("EmailJS:", err);
     wlMsg.textContent = DEBUG
@@ -334,18 +396,21 @@ wl.addEventListener("submit", async e => {
 });
 
 /* ---------- PASSWORD LOCK ----------
-   Only people with the password can open pro.html.
-   The password is stored as a SHA-256 fingerprint, not as plain text.
-   To change it, see the note in waitlist-setup.md (or ask). */
+   Before the countdown ends: only people with the password can open pro.html (early access).
+   After the countdown ends: everyone can enter, no password needed.
+   The password is stored as a SHA-256 fingerprint, not as plain text. */
 const ACCESS_HASH = "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8";   // password: set by ISALONE
 const ACCESS_KEY  = "isalone_access";
-const hasAccess = () => { try { return localStorage.getItem(ACCESS_KEY) === ACCESS_HASH; } catch(e) { return false; } };
+const hasAccess = () => { if (isLive()) return true; try { return localStorage.getItem(ACCESS_KEY) === ACCESS_HASH; } catch(e) { return false; } };
 async function sha256(text){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
 }
 const lock = $("#lock"), lockPw = $("#lockPw"), lockMsg = $("#lockMsg");
-function openLock(){ lock.classList.add("open"); $("#lockToggle").setAttribute("aria-expanded","true"); setTimeout(()=>lockPw.focus(), 50); }
+function openLock(){
+  if (isLive()) return;                                   // no password after launch
+  lock.classList.add("open"); $("#lockToggle").setAttribute("aria-expanded","true"); setTimeout(()=>lockPw.focus(), 50);
+}
 $("#lockToggle").onclick = openLock;
 lockPw.addEventListener("input", () => { lock.classList.remove("bad"); lockMsg.textContent = ""; });
 $("#lockForm").addEventListener("submit", async e => {

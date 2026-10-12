@@ -4,9 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-/* ISALONE password lock: without access, go back to the homepage to enter the password */
-(function(){ try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
-catch(e){ location.replace("index.html?locked"); } })();
+/* ISALONE lock: before launch (15 Oct 2026, 12:00 PM Cambodia time) only people with the password can enter.
+   After launch, everyone can enter without a password. */
+(function(){
+  var LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
+  if (Date.now() >= LAUNCH) return;
+  try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
+  catch(e){ location.replace("index.html?locked"); }
+})();
 </script>
 <title>ISALONE</title>
 <style>
@@ -270,11 +275,13 @@ catch(e){ location.replace("index.html?locked"); } })();
     .look-head{padding:0 16px 14px}
     .look-track{padding:0 16px}
     .look-track img{height:62vh}
-    .qv{display:flex;flex-direction:column;overflow:auto}
-    .qv-stage{order:1;height:72vh;flex:none}
-    .qv-thumbs{order:2;flex-direction:row;justify-content:flex-start;padding:12px 16px;overflow-x:auto;flex:none}
-    .qv-side{order:3;padding:20px 16px 48px}
-    .qv-top{top:16px;right:16px;gap:18px;background:rgba(255,255,255,.88);padding:8px 10px}
+    /* phone quick view: the whole page scrolls (photo → thumbnails → details) */
+    .qv{display:block;height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;
+      -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+    .qv-stage{height:62vh;height:62dvh;touch-action:pan-y}
+    .qv-thumbs{flex-direction:row;justify-content:flex-start;padding:12px 16px;overflow-x:auto}
+    .qv-side{padding:20px 16px 60px;overflow:visible;display:block}
+    .qv-top{position:fixed;top:16px;right:16px;gap:18px;background:rgba(255,255,255,.88);padding:8px 10px}
     footer{flex-direction:column;gap:16px;padding:24px 16px}
     .field input,.field textarea{font-size:16px}   /* stops iPhone zooming in */
   }
@@ -450,7 +457,7 @@ const MODEL_NOTE = "Our model is 175 cm and is wearing a size M";   // shown und
 const CONTACT_EMAIL        = "isalone.studios@gmail.com";   // shown as "Email us"
 const EMAILJS_PUBLIC_KEY   = "ESQBsB5V99RS3RoGA";
 const EMAILJS_SERVICE_ID   = "service_ecewbh8";
-const CONTACT_TEMPLATE_ID  = "template_ex9plxh";            // your "Contact Us" template — check its ID in EmailJS → Settings
+const CONTACT_TEMPLATE_ID  = "PUT_CONTACT_TEMPLATE_ID";     // create a NEW "Contact" template (To Email = your address) and paste its ID here
 const CONTACT_DEBUG        = true;                           // shows the real error while testing; set false when it works
 
 const products = [
@@ -636,6 +643,7 @@ function openQV(i){
   resetBtn($("#qvAdd"));
   $("#qvAfter").classList.remove("on");
   $("#qvSizes").innerHTML = sizeBtns(p);
+  $("#qv").scrollTop = 0;                               // always start at the photo
   $("#qv").classList.add("on"); $("#qv").setAttribute("aria-hidden","false");
   document.body.classList.add("lock");
 }
@@ -785,6 +793,7 @@ cf.addEventListener("submit", async e=>{
   if (!validEmail(email)) bad = cf.email;
   if (!name) bad = cf.name;
   if (bad){ bad.closest(".field").classList.add("bad"); bad.focus(); cStatus.textContent = "Please fill in your name, a valid email and a message."; return; }
+  if (CONTACT_TEMPLATE_ID.startsWith("PUT_")){ cStatus.textContent = CONTACT_DEBUG ? "Error: add your Contact template ID in pro.html" : `Please email us at ${CONTACT_EMAIL}`; return; }
   if (!window.emailjs){ cStatus.textContent = CONTACT_DEBUG ? "Error: EmailJS script did not load (ad blocker?)" : `Please email us at ${CONTACT_EMAIL}`; return; }
 
   cBtn.disabled = true; cStatus.textContent = "Sending…";
