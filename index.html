@@ -281,6 +281,10 @@ const EMAILJS_TEMPLATE_ID = "template_ex9plxh";   // waitlist thank-you template
 const POSTER_PATH = "./img/poster.jpg";          // the poster image on your site
 const PRODUCTS_PAGE = "pro.html";                // where people go after joining
 
+/* DEBUG: set to true while testing — shows the real EmailJS error on the page
+   and lets you send to the same email again. Set back to false when it works. */
+const DEBUG = true;
+
 const wl = $("#waitlist"), wlEmail = $("#wlEmail"), wlMsg = $("#wlMsg"), wlBtn = $("#wlBtn");
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 const emailjsReady = () => window.emailjs && !EMAILJS_PUBLIC_KEY.startsWith("YOUR_") && !EMAILJS_TEMPLATE_ID.startsWith("PUT_");
@@ -299,7 +303,8 @@ wl.addEventListener("submit", async e => {
   const email = wlEmail.value.trim().toLowerCase();
   if (!validEmail(email)) { wl.classList.add("bad"); wlMsg.textContent = "Please enter a valid email."; wlEmail.focus(); return; }
   if (wl.company.value) return;                       // bot filled the hidden field
-  if (joined().includes(email)) { wlMsg.textContent = "You're already on the waitlist."; return; }
+  if (!DEBUG && joined().includes(email)) { wlMsg.textContent = "You're already on the waitlist."; return; }
+  if (!window.emailjs) { wlMsg.textContent = DEBUG ? "Error: EmailJS script did not load (ad blocker?)" : "Waitlist isn't connected yet."; return; }
   if (!emailjsReady()) { wlMsg.textContent = "Waitlist isn't connected yet."; console.warn("Add your EmailJS keys in index.html"); return; }
 
   wlBtn.disabled = true; wlMsg.textContent = "Sending…";
@@ -320,7 +325,9 @@ wl.addEventListener("submit", async e => {
     if (hasAccess()) setTimeout(() => { location.href = PRODUCTS_PAGE; }, 1800);
   } catch (err) {
     console.error("EmailJS:", err);
-    wlMsg.textContent = "Something went wrong. Please try again.";
+    wlMsg.textContent = DEBUG
+      ? "Error " + (err?.status || "") + ": " + (err?.text || err?.message || "unknown")
+      : "Something went wrong. Please try again.";
   } finally { wlBtn.disabled = false; }
 });
 
