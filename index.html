@@ -277,7 +277,8 @@ $("#toggleVideo").onclick = () => {
    When someone joins, EmailJS sends them an email with the poster. */
 const EMAILJS_PUBLIC_KEY  = "ESQBsB5V99RS3RoGA";    // Account → General → Public key
 const EMAILJS_SERVICE_ID  = "service_ecewbh8";    // Email Services → e.g. service_xxxxxxx
-const EMAILJS_TEMPLATE_ID = "template_ega07sg";   // waitlist thank-you template
+const EMAILJS_TEMPLATE_ID = "template_ega07sg";   // waitlist template (the one with To Email = {{to_email}}) — check EmailJS → template → Settings
+const EMAIL_TITLE = "Your Drop 001 poster";        // fills {{title}} in the template subject
 const POSTER_PATH = "./img/poster.jpg";          // the poster image on your site
 const PRODUCTS_PAGE = "pro.html";                // where people go after joining
 
@@ -311,6 +312,7 @@ wl.addEventListener("submit", async e => {
   try {
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email:   email,                                          // template "To Email" = {{to_email}}
+      title:      EMAIL_TITLE,
       email:      email,
       user_email: email,
       reply_to:   email,
