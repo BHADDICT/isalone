@@ -275,11 +275,16 @@ $("#toggleVideo").onclick = () => {
 /* ---------- WAITLIST (EmailJS) ----------
    Fill these in from your EmailJS dashboard (see waitlist-setup.md).
    When someone joins, EmailJS sends them an email with the poster. */
-const EMAILJS_PUBLIC_KEY  = "z38jUWYxRvfJS_RC8";    // Account → General → Public key
-const EMAILJS_SERVICE_ID  = "service_kgp1log";    // Email Services → e.g. service_xxxxxxx
-const EMAILJS_TEMPLATE_ID = "template_ex9plxh";   // waitlist thank-you template
+const EMAILJS_PUBLIC_KEY  = "ESQBsB5V99RS3RoGA";    // Account → General → Public key
+const EMAILJS_SERVICE_ID  = "service_ecewbh8";    // Email Services → e.g. service_xxxxxxx
+const EMAILJS_TEMPLATE_ID = "template_ega07sg";   // waitlist template (the one with To Email = {{to_email}}) — check EmailJS → template → Settings
+const EMAIL_TITLE = "Your Drop 001 poster";        // fills {{title}} in the template subject
 const POSTER_PATH = "./img/poster.jpg";          // the poster image on your site
 const PRODUCTS_PAGE = "pro.html";                // where people go after joining
+
+/* DEBUG: set to true while testing — shows the real EmailJS error on the page
+   and lets you send to the same email again. Set back to false when it works. */
+const DEBUG = true;
 
 const wl = $("#waitlist"), wlEmail = $("#wlEmail"), wlMsg = $("#wlMsg"), wlBtn = $("#wlBtn");
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
@@ -299,13 +304,15 @@ wl.addEventListener("submit", async e => {
   const email = wlEmail.value.trim().toLowerCase();
   if (!validEmail(email)) { wl.classList.add("bad"); wlMsg.textContent = "Please enter a valid email."; wlEmail.focus(); return; }
   if (wl.company.value) return;                       // bot filled the hidden field
-  if (joined().includes(email)) { wlMsg.textContent = "You're already on the waitlist."; return; }
+  if (!DEBUG && joined().includes(email)) { wlMsg.textContent = "You're already on the waitlist."; return; }
+  if (!window.emailjs) { wlMsg.textContent = DEBUG ? "Error: EmailJS script did not load (ad blocker?)" : "Waitlist isn't connected yet."; return; }
   if (!emailjsReady()) { wlMsg.textContent = "Waitlist isn't connected yet."; console.warn("Add your EmailJS keys in index.html"); return; }
 
   wlBtn.disabled = true; wlMsg.textContent = "Sending…";
   try {
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email:   email,                                          // template "To Email" = {{to_email}}
+      title:      EMAIL_TITLE,
       email:      email,
       user_email: email,
       reply_to:   email,
@@ -320,7 +327,9 @@ wl.addEventListener("submit", async e => {
     if (hasAccess()) setTimeout(() => { location.href = PRODUCTS_PAGE; }, 1800);
   } catch (err) {
     console.error("EmailJS:", err);
-    wlMsg.textContent = "Something went wrong. Please try again.";
+    wlMsg.textContent = DEBUG
+      ? "Error " + (err?.status || "") + ": " + (err?.text || err?.message || "unknown")
+      : "Something went wrong. Please try again.";
   } finally { wlBtn.disabled = false; }
 });
 
