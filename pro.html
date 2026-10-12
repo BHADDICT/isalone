@@ -722,7 +722,6 @@ function tryAdd(btn, sizesEl, p){
   clearTimeout(btn._t); btn._t = setTimeout(()=>resetBtn(btn), 1800);
 }
 
-/* ---------- cart ---------- */
 function addToBag(p,size){
   const id = slug(p.name);
   const line = bag.find(b=>b.id===id && b.size===size);
