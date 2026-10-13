@@ -233,6 +233,14 @@
   body.prelaunch .logo img{filter:none}
   body.prelaunch .hero::after{
     background:linear-gradient(to bottom,rgba(236,236,238,.82),rgba(236,236,238,0) 16%)}
+  /* countdown view: no way into the site — hide Shop, Collection, Lookbook, Cart and the menu.
+     Only the logo (and Instagram on desktop) stay. The password opens the home view. */
+  body.prelaunch .h-left > a,
+  body.prelaunch .h-right a[href^="pro.html"],
+  body.prelaunch .burger,
+  body.prelaunch .panel,
+  body.prelaunch .scrim{display:none !important}
+  body.prelaunch .logo{pointer-events:none}
 
   @media (min-width:901px){
     body.prelaunch .hero-copy{left:max(26%,250px);color:var(--black)}
@@ -497,8 +505,8 @@ $("#lockForm").addEventListener("submit", async e => {
   }
 });
 
-// Shop / Collection / Cart (pro.html) need the password before launch. Lookbook is open to everyone.
-document.querySelectorAll('a[href^="pro.html"]').forEach(a => a.addEventListener("click", e => {
+// Before launch, every link into the site (Shop, Collection, Cart, Lookbook) needs the password.
+document.querySelectorAll('a[href^="pro.html"], a[href^="lookbook.html"]').forEach(a => a.addEventListener("click", e => {
   if (hasAccess()) return;
   e.preventDefault(); closeMenu(); openLock();
 }));
