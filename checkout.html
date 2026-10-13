@@ -5,11 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <script>
-/* ISALONE password lock: without access, go back to the homepage to enter the password */
-(function(){ try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
-catch(e){ location.replace("index.html?locked"); } })();
+/* ISALONE lock: before launch (13 Oct 2026, 1:30 PM Cambodia time) only people with the password can check out.
+   After launch, everyone can. Use the SAME time in index.html, pro.html and lookbook.html. */
+(function(){
+  var LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
+  if (Date.now() >= LAUNCH) return;
+  try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
+  catch(e){ location.replace("index.html?locked"); }
+})();
 </script>
 <title>Checkout — ISALONE</title>
+<!-- Browser-tab icon (favicon): uses the ISALONE logo -->
+<link rel="icon" type="image/png" href="./img/logo.png?v=2">
+<link rel="apple-touch-icon" href="./img/logo.png?v=2">
 <style>
   :root{
     --ink:#111;
@@ -214,7 +222,10 @@ catch(e){ location.replace("index.html?locked"); } })();
   .toast.show{transform:none}
 
 
-  footer{border-top:1px solid var(--line);padding:22px 24px;color:var(--muted)}
+  footer{border-top:1px solid var(--line);padding:22px 24px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer nav{display:flex;gap:20px}
+  footer a{text-decoration:none}
+  footer a:hover{color:var(--ink)}
   .cart-link{white-space:nowrap}
   @media (max-width:520px){
     header{padding:14px 16px}
@@ -228,7 +239,6 @@ catch(e){ location.replace("index.html?locked"); } })();
 <header>
   <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
   <a class="logo" href="index.html" aria-label="ISALONE home">
-    <!-- Swap for your logo file path -->
     <img src="./img/logo.png" alt="ISALONE" onerror="this.outerHTML='<span class=&quot;wordmark&quot;>ISALONE</span>'">
   </a>
   <a class="cart-link caps" href="#" id="cartLink">Cart ( 0 )</a>
@@ -383,7 +393,7 @@ catch(e){ location.replace("index.html?locked"); } })();
           <div class="caps rc-muted">Ship to</div>
           <div id="rcAddr"></div>
         </div>
-        <div class="rc-foot caps">Keep this receipt · Show it if we ask about your order</div>
+        <div class="rc-foot caps">Keep this receipt · Show it if we ask about your order<br>Size exchanges within 7 days · See our Returns &amp; Exchanges Policy</div>
 
         <div class="rc-actions no-print" data-html2canvas-ignore>
           <div class="rc-sent caps" id="sentNote">✓ Your order has been sent to ISALONE</div>
@@ -410,9 +420,10 @@ catch(e){ location.replace("index.html?locked"); } })();
     <div class="sum-line caps"><span>Shipping</span><span id="sumShip">Calculated at checkout</span></div>
     <div class="sum-line total caps"><span>Total</span><span id="sumTotal">$0.00</span></div>
 
+    <!-- Policies open in a new tab so the customer doesn't lose their checkout -->
     <label class="terms caps">
       <input type="checkbox" id="terms">
-      <span>I've read and accept the <a href="privacy.html">Privacy Policy</a> and the <a href="terms.html">Terms and Conditions</a></span>
+      <span>I've read and accept the <a href="policies.html#terms" target="_blank" rel="noopener">Terms &amp; Conditions</a>, the <a href="policies.html#returns" target="_blank" rel="noopener">Returns &amp; Exchanges Policy</a> and the <a href="policies.html#privacy" target="_blank" rel="noopener">Privacy Policy</a></span>
     </label>
     <button class="btn caps" id="mainBtn" disabled><span id="mainLabel">Checkout</span><span id="mainAmt">$0.00</span></button>
     <div class="secure caps">
@@ -422,7 +433,14 @@ catch(e){ location.replace("index.html?locked"); } })();
   </aside>
 </main>
 
-<footer class="caps">© 2026 ISALONE</footer>
+<footer class="caps">
+  <span>© 2026 ISALONE</span>
+  <nav>
+    <a href="policies.html#privacy" target="_blank" rel="noopener">Privacy</a>
+    <a href="policies.html#terms" target="_blank" rel="noopener">Terms</a>
+    <a href="policies.html#returns" target="_blank" rel="noopener">Returns</a>
+  </nav>
+</footer>
 
 <script src="checkout.js"></script>
 
