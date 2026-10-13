@@ -4,16 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-/* ISALONE lock: before launch (15 Oct 2026, 12:00 PM Cambodia time) only people with the password can enter.
-   After launch, everyone can enter without a password. */
+/* ISALONE lock: before launch (13 Oct 2026, 1:30 PM Cambodia time) only people with the password can enter.
+   After launch, everyone can enter without a password. Use the SAME time in index.html, lookbook.html and checkout.html. */
 (function(){
-  var LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
+  var LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
   if (Date.now() >= LAUNCH) return;
   try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
   catch(e){ location.replace("index.html?locked"); }
 })();
 </script>
 <title>ISALONE</title>
+<!-- Browser-tab icon (favicon): uses the ISALONE logo -->
+<link rel="icon" type="image/png" href="./img/logo.png?v=2">
+<link rel="apple-touch-icon" href="./img/logo.png?v=2">
 <style>
   :root{
     --black:#111;
@@ -453,11 +456,11 @@ const MODEL_NOTE = "Our model is 175 cm and is wearing a size M";   // shown und
 
 /* ---------- CONTACT FORM (EmailJS) ----------
    Messages from the Contact panel are emailed to you.
-   Uses the "Contact Us" template (To Email = your address, Reply To = {{email}}). */
+   Uses the "Contact" template (To Email = your address, Reply To = {{email}}, Subject = {{title}}). */
 const CONTACT_EMAIL        = "isalone.studios@gmail.com";   // shown as "Email us"
-const EMAILJS_PUBLIC_KEY   = "ESQBsB5V99RS3RoGA";
-const EMAILJS_SERVICE_ID   = "service_ecewbh8";
-const CONTACT_TEMPLATE_ID  = "PUT_CONTACT_TEMPLATE_ID";     // create a NEW "Contact" template (To Email = your address) and paste its ID here
+const EMAILJS_PUBLIC_KEY   = "SmoLQAp-ij_aoJbAd";
+const EMAILJS_SERVICE_ID   = "service_y6509uw";
+const CONTACT_TEMPLATE_ID  = "template_l1sw4z3";
 const CONTACT_DEBUG        = true;                           // shows the real error while testing; set false when it works
 
 const products = [
