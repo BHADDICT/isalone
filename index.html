@@ -10,10 +10,9 @@
 <!-- Site address: https://isalonestudio.com/ -->
 <link rel="canonical" href="https://isalonestudio.com/">
 
-<!-- Logo / icons -->
-<link rel="icon" type="image/png" sizes="32x32" href="./img/favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./img/icon-192.png">
-<link rel="apple-touch-icon" href="./img/apple-touch-icon.png">
+<!-- Browser-tab icon (favicon): uses the ISALONE logo -->
+<link rel="icon" type="image/png" href="./img/logo.png?v=2">
+<link rel="apple-touch-icon" href="./img/logo.png?v=2">
 
 <!-- Link previews (Facebook, Instagram, Telegram, WhatsApp, iMessage) -->
 <meta property="og:type" content="website">
@@ -62,8 +61,6 @@
   :root{
     --black:#111;
     --font:"Helvetica Neue", Helvetica, Arial, sans-serif;
-    /* headline font: elegant italic. For a handwritten script instead, use:
-       --cursive:"Pinyon Script", cursive;  (and set font-style:normal on .season) */
     --cursive:"Cormorant Garamond", "Times New Roman", Georgia, serif;
     --ease:cubic-bezier(.2,.7,.2,1);
   }
@@ -74,7 +71,13 @@
   img{display:block}
   .tiny{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
 
-  /* ---------- HEADER (over the video) ---------- */
+  /* ONE PAGE, TWO VIEWS
+     body.prelaunch = countdown view (photo of Yunji, countdown, waitlist, password)
+     no class       = home view (video, slogan, shop buttons) — after launch, or after the password */
+  body.prelaunch .home-only{display:none !important}
+  body:not(.prelaunch) .pre-only{display:none !important}
+
+  /* ---------- HEADER ---------- */
   header{
     position:fixed;top:0;left:0;right:0;z-index:20;
     display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:22px 32px;
@@ -89,7 +92,7 @@
   .burger{display:none;align-items:center;gap:8px}
   .ico{width:12px;height:12px}
 
-  /* ---------- FULL-SCREEN VIDEO (after launch) / PHOTO (before launch) ---------- */
+  /* ---------- HERO: video (home view) / photo (countdown view) ---------- */
   .hero{position:fixed;inset:0;overflow:hidden;background:#1a1b1a}
   .hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:49% 50%;
     opacity:0;transition:opacity 1.2s var(--ease)}
@@ -98,7 +101,7 @@
     opacity:0;transition:opacity 1.2s var(--ease);display:none}
   .hero-photo.ready{opacity:1}
   .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
-    background:linear-gradient(to bottom,rgba(0,0,0,.28),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 70%,rgba(0,0,0,.2))}
+    background:linear-gradient(to bottom,rgba(0,0,0,.3),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 55%,rgba(0,0,0,.35))}
   .hero-copy{
     position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);
     display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;
@@ -112,6 +115,11 @@
   .eyebrow{opacity:.85;letter-spacing:.24em;margin-bottom:-8px}
   @keyframes rise{to{opacity:1;transform:none}}
 
+  /* home view: slogan + buttons */
+  .season{font-family:var(--cursive);font-style:italic;font-weight:400;font-size:min(44px,4.6vw);line-height:1.2;letter-spacing:.005em;white-space:nowrap}
+  .m-br{display:none}
+  .ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
   /* countdown */
   .launch{display:flex;flex-direction:column;align-items:center;gap:10px}
   .countdown{display:flex;align-items:flex-start;gap:14px}
@@ -120,8 +128,6 @@
   .cd-lbl{opacity:.75;font-size:9px;letter-spacing:.18em}
   .cd-sep{font-size:28px;font-weight:200;line-height:1;opacity:.5}
   .cd-note{opacity:.8;letter-spacing:.2em}
-  /* after the countdown ends: hide countdown + password, keep the waitlist */
-  body.live .launch,body.live .lock{display:none}
 
   /* waitlist */
   .waitlist{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(420px,86vw)}
@@ -139,8 +145,8 @@
   .wl-row .cta:disabled{opacity:.6;cursor:wait}
   .waitlist.bad input[type=email]{border-color:#ffb4ab}
   .wl-msg{min-height:14px;opacity:.9}
-  .waitlist.done .wl-row{display:none}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+
   /* password lock (early access before the countdown ends) */
   .lock{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(420px,86vw)}
   .lock-toggle{display:inline-flex;align-items:center;gap:8px;opacity:.8;transition:opacity .2s}
@@ -159,11 +165,10 @@
   .lock.bad .lock-form input{border-color:#ffb4ab}
   @keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
   .lock.bad .wl-row{animation:shake .4s ease}
-  .season{font-family:var(--cursive);font-style:italic;font-weight:400;font-size:min(36px,4.1vw);line-height:1.2;letter-spacing:.005em;white-space:nowrap}
-  .m-br{display:none}
+
   .cta{
     position:relative;overflow:hidden;display:inline-block;border:1px solid rgba(255,255,255,.9);
-    padding:15px 20px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;
+    padding:15px 22px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;
     transition:color .45s var(--ease);
   }
   .cta::before{content:"";position:absolute;inset:0;background:#fff;transform:translateY(101%);transition:transform .45s var(--ease)}
@@ -191,13 +196,15 @@
     .logo img{height:38px}
     .pause{right:16px;bottom:18px}
   }
-  /* phones: give the text room — headline on two lines, more space between blocks */
+  /* phones */
   @media (max-width:600px){
     .hero-copy{width:100%;padding:0 28px;gap:28px}
     .eyebrow{margin-bottom:-14px;letter-spacing:.28em}
-    .season{white-space:normal;font-size:min(34px,6.6vw);line-height:1.2}
+    .season{white-space:normal;font-size:min(36px,7vw)}
     .season .l1,.season .l2{white-space:nowrap}
     .m-br{display:inline}
+    .ctas{flex-direction:column;width:100%;max-width:300px}
+    .ctas .cta{text-align:center;padding:17px 22px}
     .countdown{gap:8px}
     .cd-unit{min-width:46px}
     .cd-num{font-size:28px}
@@ -212,11 +219,10 @@
   }
   @media (max-width:600px) and (max-height:700px){
     .hero-copy{gap:18px}
-    .season{font-size:min(26px,6.2vw)}
     .cd-num{font-size:24px}
   }
 
-  /* ---------- BEFORE LAUNCH: photo of Yunji instead of the video ----------
+  /* ---------- COUNTDOWN VIEW: photo of Yunji instead of the video ----------
      The photo has a white wall, so the header turns dark.
      Desktop: text sits on the empty wall to her left, in black.
      Phone/tablet: text sits at the bottom over her black hoodie, in white. */
@@ -230,9 +236,6 @@
 
   @media (min-width:901px){
     body.prelaunch .hero-copy{left:max(26%,250px);color:var(--black)}
-    body.prelaunch .season{white-space:normal}
-    body.prelaunch .season .l1,body.prelaunch .season .l2{white-space:nowrap}
-    body.prelaunch .m-br{display:inline}
     body.prelaunch .cta{border-color:rgba(17,17,17,.9)}
     body.prelaunch .cta::before{background:var(--black)}
     body.prelaunch .cta:hover{color:#fff}
@@ -254,8 +257,18 @@
     .hero-copy > *{animation:none;opacity:1;transform:none}
   }
 </style>
+
+<script>
+/* Pick the view before the page draws, so nobody sees a flash of the wrong one.
+   Use the SAME launch time and hash further down, and in pro.html, lookbook.html and checkout.html. */
+(function(){
+  var LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
+  if (Date.now() < LAUNCH) document.documentElement.classList.add("pre");   // before launch: always start on the countdown
+})();
+</script>
 </head>
-<body class="prelaunch">
+<body>
+<script>if (document.documentElement.classList.contains("pre")) document.body.classList.add("prelaunch");</script>
 
 <header>
   <div class="h-left">
@@ -274,14 +287,23 @@
 </header>
 
 <main class="hero" aria-label="ISALONE campaign">
-  <!-- before launch: photo of Yunji (countdown + waitlist) -->
+  <!-- countdown view: photo of Yunji -->
   <img id="heroPhoto" class="hero-photo" src="./img/yungji.JPEG" alt="Model in a black ISALONE hoodie against a white wall" fetchpriority="high">
-  <!-- after launch: the home page video (only loads once the drop is open) -->
+  <!-- home view: the video (only loads when the home view is shown) -->
   <video id="heroVideo" data-src="./img/vid.MP4" data-poster="./img/hero-poster.jpg" muted loop playsinline preload="auto" aria-hidden="true"></video>
-  <div class="hero-copy">
-    <p class="tiny eyebrow" id="eyebrow">ISALONE — Drop 001</p>
 
-    <div class="launch" id="launch" aria-label="Time until Drop 001 opens">
+  <div class="hero-copy">
+    <p class="tiny eyebrow">ISALONE — Drop 001</p>
+
+    <!-- ===== HOME VIEW ===== -->
+    <h1 class="season home-only"><span class="l1">When you wear this,</span><br class="m-br"> <span class="l2">you’ll always think about me.</span></h1>
+    <div class="ctas home-only">
+      <a href="pro.html" class="cta"><span>Shop Drop 001</span></a>
+      <a href="lookbook.html" class="cta"><span>View Lookbook</span></a>
+    </div>
+
+    <!-- ===== COUNTDOWN VIEW ===== -->
+    <div class="launch pre-only" id="launch" aria-label="Time until Drop 001 opens">
       <div class="countdown">
         <div class="cd-unit"><span class="cd-num" id="cdD">00</span><span class="tiny cd-lbl">Days</span></div>
         <span class="cd-sep">:</span>
@@ -291,11 +313,11 @@
         <span class="cd-sep">:</span>
         <div class="cd-unit"><span class="cd-num" id="cdS">00</span><span class="tiny cd-lbl">Sec</span></div>
       </div>
-      <p class="tiny cd-note">Opens 13 October · 12:00 PM</p>
+      <p class="tiny cd-note">Opens 13 October · 1:30 PM</p>
     </div>
 
-    <form class="waitlist" id="waitlist" novalidate>
-      <label for="wlEmail" class="tiny wl-label" id="wlLabel">Join the waitlist</label>
+    <form class="waitlist pre-only" id="waitlist" novalidate>
+      <label for="wlEmail" class="tiny wl-label">Join the waitlist</label>
       <div class="wl-row">
         <input id="wlEmail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Your email" required>
         <input type="text" name="company" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -304,7 +326,7 @@
       <p class="tiny wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
     </form>
 
-    <div class="lock" id="lock">
+    <div class="lock pre-only" id="lock">
       <button type="button" class="tiny lock-toggle" id="lockToggle" aria-expanded="false" aria-controls="lockForm">
         <svg viewBox="0 0 12 14" aria-hidden="true"><rect x="1" y="6" width="10" height="7" fill="none" stroke="currentColor"/><path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor"/></svg>
         <span>Early access with password</span>
@@ -326,7 +348,7 @@
   <button class="close tiny" data-close>Close</button>
   <h3 class="tiny">Menu</h3>
   <nav class="menu-links">
-    <a href="pro.html">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a>
+    <a href="./">Home</a><a href="pro.html">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a>
     <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a>
   </nav>
 </aside>
@@ -336,23 +358,26 @@
 <script>
 const $ = s => document.querySelector(s);
 
-/* ---------- LAUNCH TIME ----------
-   Countdown ends 13 October 2026, 12:00 PM Cambodia time (UTC+7).
-   After that, this page sends everyone to home.html (no password needed).
-   Use the SAME time in home.html, pro.html, lookbook.html and checkout.html. */
-const LAUNCH = new Date("2026-10-13T12:00:00+07:00").getTime();
-const HOME_PAGE = "home.html";
-if (Date.now() >= LAUNCH) location.replace(HOME_PAGE);   // already open → go straight to the homepage
+/* ---------- LAUNCH TIME + PASSWORD ----------
+   Countdown ends 13 October 2026, 1:30 PM Cambodia time (UTC+7).
+   Then the page switches to the home view (video) for everyone.
+   Before that, the page always opens on the countdown; entering the password
+   switches to the home view for that visit (early access).
+   The password is stored as a SHA-256 fingerprint, not as plain text. */
+const LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
+const ACCESS_HASH = "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8";   // password: set by ISALONE
+const ACCESS_KEY  = "isalone_access";
 const isLive = () => Date.now() >= LAUNCH;
+const hasAccess = () => { if (isLive()) return true; try { return localStorage.getItem(ACCESS_KEY) === ACCESS_HASH; } catch(e) { return false; } };
 
-/* ---------- hero: photo before launch, video after ---------- */
+/* ---------- photo + video ---------- */
 const ph = $("#heroPhoto");
 if (ph.complete && ph.naturalWidth) ph.classList.add("ready");
 else ph.addEventListener("load", () => ph.classList.add("ready"), { once:true });
 
 const v = $("#heroVideo");
 let videoStarted = false;
-function startVideo(){                       // loads the video only once the drop is open
+function startVideo(){
   if (videoStarted) return; videoStarted = true;
   v.poster = v.dataset.poster;
   v.addEventListener("canplay", () => v.classList.add("ready"), { once:true });
@@ -365,40 +390,36 @@ $("#toggleVideo").onclick = () => {
   else { v.pause(); b.textContent = "Play"; b.setAttribute("aria-label","Play background video"); }
 };
 
+/* ---------- switch to the home view ---------- */
+let cdTimer = null;
+function showHome(){
+  if (cdTimer) clearInterval(cdTimer);
+  document.documentElement.classList.remove("pre");
+  document.body.classList.remove("prelaunch");
+  closeMenu();
+  startVideo();
+}
+
 /* ---------- COUNTDOWN ---------- */
 const pad = n => String(n).padStart(2, "0");
-let cdTimer = null;
-function goLive(){
-  document.body.classList.remove("prelaunch");
-  document.body.classList.add("live");
-  $("#eyebrow").textContent = "ISALONE — Drop 001 · Now open";
-  if (cdTimer) clearInterval(cdTimer);
-  location.replace(HOME_PAGE);               // countdown finished → go to the video homepage
-}
 function tick(){
   const diff = LAUNCH - Date.now();
-  if (diff <= 0) { goLive(); return; }
+  if (diff <= 0) { showHome(); return; }
   const s = Math.floor(diff / 1000);
   $("#cdD").textContent = pad(Math.floor(s / 86400));
   $("#cdH").textContent = pad(Math.floor(s % 86400 / 3600));
   $("#cdM").textContent = pad(Math.floor(s % 3600 / 60));
   $("#cdS").textContent = pad(s % 60);
 }
-tick();
-if (!isLive()) cdTimer = setInterval(tick, 1000);
 
-/* ---------- WAITLIST (EmailJS) ----------
-   Fill these in from your EmailJS dashboard (see waitlist-setup.md).
-   When someone joins, EmailJS sends them an email with the poster. */
-const EMAILJS_PUBLIC_KEY  = "ESQBsB5V99RS3RoGA";    // Account → General → Public key
-const EMAILJS_SERVICE_ID  = "service_ecewbh8";    // Email Services → e.g. service_xxxxxxx
-const EMAILJS_TEMPLATE_ID = "template_ega07sg";   // waitlist template (the one with To Email = {{to_email}}) — check EmailJS → template → Settings
-const EMAIL_TITLE = "Your Drop 001 poster";        // fills {{title}} in the template subject
-const POSTER_PATH = "./img/poster.jpg";          // the poster image on your site
-const PRODUCTS_PAGE = "home.html";               // where people go after entering the password (video homepage)
+/* ---------- WAITLIST (EmailJS) ---------- */
+const EMAILJS_PUBLIC_KEY  = "ESQBsB5V99RS3RoGA";
+const EMAILJS_SERVICE_ID  = "service_ecewbh8";
+const EMAILJS_TEMPLATE_ID = "template_ega07sg";
+const EMAIL_TITLE = "Your Drop 001 poster";
+const POSTER_PATH = "./img/poster.jpg";
 
-/* DEBUG: set to true while testing — shows the real EmailJS error on the page
-   and lets you send to the same email again. Set back to false when it works. */
+/* DEBUG: true while testing — shows the real EmailJS error and lets you resend to the same email. */
 const DEBUG = true;
 
 const wl = $("#waitlist"), wlEmail = $("#wlEmail"), wlMsg = $("#wlMsg"), wlBtn = $("#wlBtn");
@@ -406,7 +427,6 @@ const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 const emailjsReady = () => window.emailjs && !EMAILJS_PUBLIC_KEY.startsWith("YOUR_") && !EMAILJS_TEMPLATE_ID.startsWith("PUT_");
 if (emailjsReady()) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 
-// Emails already joined from this browser (form stays open on every visit)
 const WL_KEY = "isalone_waitlist_emails";
 const joined = () => { try { const a = JSON.parse(localStorage.getItem(WL_KEY)); return Array.isArray(a) ? a : []; } catch(e){ return []; } };
 const remember = email => { try { const a = joined(); if (!a.includes(email)) a.push(email); localStorage.setItem(WL_KEY, JSON.stringify(a)); } catch(e){} };
@@ -421,17 +441,17 @@ wl.addEventListener("submit", async e => {
   if (wl.company.value) return;                       // bot filled the hidden field
   if (!DEBUG && joined().includes(email)) { wlMsg.textContent = "You're already on the waitlist."; return; }
   if (!window.emailjs) { wlMsg.textContent = DEBUG ? "Error: EmailJS script did not load (ad blocker?)" : "Waitlist isn't connected yet."; return; }
-  if (!emailjsReady()) { wlMsg.textContent = "Waitlist isn't connected yet."; console.warn("Add your EmailJS keys in index.html"); return; }
+  if (!emailjsReady()) { wlMsg.textContent = "Waitlist isn't connected yet."; return; }
 
   wlBtn.disabled = true; wlMsg.textContent = "Sending…";
   try {
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email:   email,                                          // template "To Email" = {{to_email}}
+      to_email:   email,
       title:      EMAIL_TITLE,
       email:      email,
       user_email: email,
       reply_to:   email,
-      poster_url: new URL(POSTER_PATH, location.href).href,       // template uses <img src="{{poster_url}}">
+      poster_url: new URL(POSTER_PATH, location.href).href,
       site_url:   new URL("./", location.href).href,
       logo_url:   new URL("./img/logo.png", location.href).href,
       instagram_url: "https://www.instagram.com/isalone_studio"
@@ -439,8 +459,7 @@ wl.addEventListener("submit", async e => {
     remember(email);
     wlEmail.value = "";
     wlMsg.textContent = "Thank you. Check your inbox.";
-    // no redirect: before launch, show the password box so they enter the password next
-    if (!isLive()) setTimeout(openLock, 1200);
+    if (!isLive()) setTimeout(openLock, 1200);        // next step: the password box
   } catch (err) {
     console.error("EmailJS:", err);
     wlMsg.textContent = DEBUG
@@ -449,20 +468,14 @@ wl.addEventListener("submit", async e => {
   } finally { wlBtn.disabled = false; }
 });
 
-/* ---------- PASSWORD LOCK ----------
-   Before the countdown ends: only people with the password can open pro.html (early access).
-   After the countdown ends: everyone can enter, no password needed.
-   The password is stored as a SHA-256 fingerprint, not as plain text. */
-const ACCESS_HASH = "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8";   // password: set by ISALONE
-const ACCESS_KEY  = "isalone_access";
-const hasAccess = () => { if (isLive()) return true; try { return localStorage.getItem(ACCESS_KEY) === ACCESS_HASH; } catch(e) { return false; } };
+/* ---------- PASSWORD LOCK ---------- */
 async function sha256(text){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
 }
 const lock = $("#lock"), lockPw = $("#lockPw"), lockMsg = $("#lockMsg");
 function openLock(){
-  if (isLive()) return;                                   // no password after launch
+  if (isLive()) return;
   lock.classList.add("open"); $("#lockToggle").setAttribute("aria-expanded","true"); setTimeout(()=>lockPw.focus(), 50);
 }
 $("#lockToggle").onclick = openLock;
@@ -476,7 +489,7 @@ $("#lockForm").addEventListener("submit", async e => {
   if (ok) {
     try { localStorage.setItem(ACCESS_KEY, ACCESS_HASH); } catch(e){}
     lockMsg.textContent = "Welcome.";
-    setTimeout(() => { location.href = PRODUCTS_PAGE; }, 500);
+    setTimeout(showHome, 500);                        // same page, now showing the home view
   } else {
     lock.classList.remove("bad"); void lock.offsetWidth; lock.classList.add("bad");
     lockMsg.textContent = "Wrong password.";
@@ -484,12 +497,11 @@ $("#lockForm").addEventListener("submit", async e => {
   }
 });
 
-document.querySelectorAll('a[href^="pro.html"], a[href^="lookbook.html"]').forEach(a => a.addEventListener("click", e => {
+// Shop / Collection / Cart (pro.html) need the password before launch. Lookbook is open to everyone.
+document.querySelectorAll('a[href^="pro.html"]').forEach(a => a.addEventListener("click", e => {
   if (hasAccess()) return;
-  e.preventDefault(); closeMenu && closeMenu(); openLock();
+  e.preventDefault(); closeMenu(); openLock();
 }));
-// opened from a locked page (pro.html?locked) → show the password box right away
-if (new URLSearchParams(location.search).has("locked")) openLock();
 
 /* ---------- cart count (shared with pro.html and checkout.html) ---------- */
 function cartCount(){
@@ -505,6 +517,15 @@ $("#openMenu").onclick = () => { $("#menu").classList.add("on"); $("#scrim").cla
 $("#scrim").onclick = closeMenu;
 document.querySelectorAll("[data-close], .menu-links a").forEach(b => b.addEventListener("click", closeMenu));
 addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
+
+/* ---------- start ---------- */
+if (isLive()) showHome();
+else {
+  tick();
+  cdTimer = setInterval(tick, 1000);
+  // opened from a locked page (pro.html?locked) → show the password box right away
+  if (new URLSearchParams(location.search).has("locked")) openLock();
+}
 </script>
 </body>
 </html>
