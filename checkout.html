@@ -101,6 +101,14 @@
   .field .err{display:none;color:var(--error);font-size:11px;margin-top:5px}
   .field.invalid .err{display:block}
   .block + .block{margin-top:36px}
+  .map-row{display:flex}
+  .map-row input{flex:1;min-width:0}
+  .map-btn{flex:none;height:46px;padding:0 14px;border:1px solid var(--ink);border-left:0;font-weight:700;white-space:nowrap}
+  .map-btn:disabled{opacity:.5;cursor:wait}
+  .map-help{margin-top:6px;color:var(--muted);font-size:10px;line-height:1.6}
+  .map-help a{color:var(--ink);text-underline-offset:3px}
+  .map-help.ok #mapMsg{color:var(--ink)}
+  @media (max-width:520px){.map-btn{padding:0 10px;font-size:10px}}
 
   .options{border:1px solid var(--line)}
   .option{display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;border-top:1px solid var(--line)}
@@ -282,7 +290,17 @@
           <div class="field"><label class="caps" for="first">First name</label><input id="first" autocomplete="given-name" required><div class="err">Required</div></div>
           <div class="field"><label class="caps" for="last">Last name</label><input id="last" autocomplete="family-name" required><div class="err">Required</div></div>
           <div class="field full"><label class="caps" for="address">Address (house no., street)</label><input id="address" autocomplete="address-line1" placeholder="e.g. #12, St. 240" required><div class="err">Required</div></div>
-          <div class="field full"><label class="caps" for="address2">Sangkat / Khan, landmark (optional)</label><input id="address2" autocomplete="address-line2"></div>
+          <div class="field full"><label class="caps" for="sangkat">Sangkat / Khan (optional)</label><input id="sangkat" autocomplete="address-line2" placeholder="e.g. Sangkat Boeung Keng Kang 1, Khan Chamkarmon"></div>
+          <div class="field full"><label class="caps" for="mapLink">Google Maps location (optional)</label>
+            <div class="map-row">
+              <input id="mapLink" type="url" inputmode="url" placeholder="Paste a Google Maps link">
+              <button type="button" class="map-btn caps" id="mapLocate">Use my location</button>
+            </div>
+            <div class="map-help caps"><span id="mapMsg">Paste a link from Google Maps, or tap "Use my location"</span> · <a href="https://www.google.com/maps" target="_blank" rel="noopener">Open Google Maps</a></div>
+            <div class="err">Paste a full link, e.g. https://maps.app.goo.gl/…</div>
+          </div>
+          <!-- hidden: Sangkat/Khan + map link combined, read by checkout.js like before -->
+          <input id="address2" type="hidden">
           <div class="field full"><label class="caps" for="province">Province</label>
             <select id="province" autocomplete="address-level1" required>
               <option selected>Phnom Penh</option>
@@ -441,6 +459,66 @@
     <a href="policies.html#returns" target="_blank" rel="noopener">Returns</a>
   </nav>
 </footer>
+
+<!-- Google Maps link. Runs before checkout.js, so checkout.js still reads one #address2 field. -->
+<script>
+(function(){
+  var form = document.getElementById("infoForm");
+  var sangkat = document.getElementById("sangkat");
+  var mapLink = document.getElementById("mapLink");
+  var hidden = document.getElementById("address2");
+  var msg = document.getElementById("mapMsg");
+  var locate = document.getElementById("mapLocate");
+  var DEFAULT_MSG = msg.textContent;
+
+  // remember what the customer typed, in case they leave and come back
+  var KEY = "isalone_addr_extra";
+  try { var saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    sangkat.value = saved.s || ""; mapLink.value = saved.m || ""; } catch(e){}
+
+  function isUrl(v){ return /^https?:\/\/\S+\.\S+/i.test(v); }
+  function combine(){
+    var parts = [];
+    if (sangkat.value.trim()) parts.push(sangkat.value.trim());
+    if (mapLink.value.trim()) parts.push("Map: " + mapLink.value.trim());
+    hidden.value = parts.join(" · ");
+    try { localStorage.setItem(KEY, JSON.stringify({ s:sangkat.value, m:mapLink.value })); } catch(e){}
+  }
+  [sangkat, mapLink].forEach(function(el){
+    el.addEventListener("input", function(){ el.closest(".field").classList.remove("invalid"); combine(); });
+  });
+  combine();
+
+  // check the map link before checkout.js moves on to shipping
+  document.addEventListener("submit", function(e){
+    if (e.target !== form) return;
+    combine();
+    var bad = null;
+    var link = mapLink.value.trim();
+    if (link && !isUrl(link)) { mapLink.closest(".field").classList.add("invalid"); bad = bad || mapLink; }
+    if (bad) { e.preventDefault(); e.stopImmediatePropagation(); bad.focus(); }
+  }, true);
+
+  // "Use my location": turns the phone's GPS position into a Google Maps link
+  locate.addEventListener("click", function(){
+    if (!navigator.geolocation) { msg.textContent = "Your browser can't share location. Please paste a Google Maps link."; return; }
+    locate.disabled = true; msg.textContent = "Finding your location…";
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude.toFixed(6), lng = pos.coords.longitude.toFixed(6);
+      mapLink.value = "https://www.google.com/maps?q=" + lat + "," + lng;
+      mapLink.closest(".field").classList.remove("invalid");
+      combine();
+      msg.parentNode.classList.add("ok");
+      msg.innerHTML = '✓ Location added · <a href="' + mapLink.value + '" target="_blank" rel="noopener">Check it on the map</a>';
+      locate.disabled = false;
+    }, function(){
+      msg.textContent = "Couldn't get your location. Allow location access, or paste a Google Maps link.";
+      locate.disabled = false;
+    }, { enableHighAccuracy:true, timeout:15000, maximumAge:60000 });
+  });
+  mapLink.addEventListener("input", function(){ msg.parentNode.classList.remove("ok"); msg.textContent = DEFAULT_MSG; });
+})();
+</script>
 
 <script src="checkout.js"></script>
 
@@ -662,7 +740,9 @@
       receipt:      receiptText(o),
       items_html:   itemsHtml(o),
       totals_html:  totalsHtml(o),
-      address_html: esc(o.addr).replace(/\n/g, "<br>"),
+      address_html: esc(o.addr).replace(/\n/g, "<br>")
+                      .replace(/(https?:\/\/[^\s<·]+)/g, '<a href="$1" style="color:#111111">$1</a>'),
+      map_link:     val("mapLink"),
       logo_url:     new URL("img/logo.png", location.href).href,
       print_link:   new URL(PRINT_PAGE, location.href).href + "#" + encode(o)
     }, { publicKey: EMAILJS_PUBLIC_KEY }).then(function(){
