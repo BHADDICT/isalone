@@ -262,7 +262,7 @@
 /* Pick the view before the page draws, so nobody sees a flash of the wrong one.
    Use the SAME launch time and hash further down, and in pro.html, lookbook.html and checkout.html. */
 (function(){
-  var LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
+  var LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
   if (Date.now() < LAUNCH) document.documentElement.classList.add("pre");   // before launch: always start on the countdown
 })();
 </script>
@@ -313,7 +313,7 @@
         <span class="cd-sep">:</span>
         <div class="cd-unit"><span class="cd-num" id="cdS">00</span><span class="tiny cd-lbl">Sec</span></div>
       </div>
-      <p class="tiny cd-note">Opens 13 October · 1:30 PM</p>
+      <p class="tiny cd-note">Opens 15 October · 12:00 PM</p>
     </div>
 
     <form class="waitlist pre-only" id="waitlist" novalidate>
@@ -359,12 +359,12 @@
 const $ = s => document.querySelector(s);
 
 /* ---------- LAUNCH TIME + PASSWORD ----------
-   Countdown ends 13 October 2026, 1:30 PM Cambodia time (UTC+7).
+   Countdown ends 15 October 2026, 12:00 PM Cambodia time (UTC+7).
    Then the page switches to the home view (video) for everyone.
    Before that, the page always opens on the countdown; entering the password
    switches to the home view for that visit (early access).
    The password is stored as a SHA-256 fingerprint, not as plain text. */
-const LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
+const LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
 const ACCESS_HASH = "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8";   // password: set by ISALONE
 const ACCESS_KEY  = "isalone_access";
 const isLive = () => Date.now() >= LAUNCH;
