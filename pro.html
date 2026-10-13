@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-/* ISALONE lock: before launch (13 Oct 2026, 1:30 PM Cambodia time) only people with the password can enter.
+/* ISALONE lock: before launch (15 Oct 2026, 12:00 PM Cambodia time) only people with the password can enter.
    After launch, everyone can enter without a password. Use the SAME time in index.html, lookbook.html and checkout.html. */
 (function(){
-  var LAUNCH = new Date("2026-10-13T13:30:00+07:00").getTime();
+  var LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
   if (Date.now() >= LAUNCH) return;
   try { if (localStorage.getItem("isalone_access") !== "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8") location.replace("index.html?locked"); }
   catch(e){ location.replace("index.html?locked"); }
@@ -319,6 +319,9 @@
     <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a>
     <a href="#contact" data-panel="#contact">Contact</a>
     <a href="#shipping" data-panel="#shipping">Shipping</a>
+    <a href="policies.html#returns">Returns</a>
+    <a href="policies.html#terms">Terms</a>
+    <a href="policies.html#privacy">Privacy</a>
   </nav>
 </footer>
 
@@ -329,6 +332,7 @@
   <nav class="menu-links">
     <a href="index.html">Home</a><a href="pro.html">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a><a href="index.html#about">About</a>
     <a href="#contact" data-panel="#contact">Contact</a><a href="#shipping" data-panel="#shipping">Shipping</a>
+    <a href="policies.html#returns">Returns &amp; Exchanges</a><a href="policies.html#terms">Terms</a><a href="policies.html#privacy">Privacy</a>
   </nav>
 </aside>
 
@@ -377,7 +381,7 @@
     <ul>
       <li>Your order is prepared as soon as your ABA (KHQR) payment is confirmed.</li>
       <li>We'll contact you to confirm your delivery address before sending.</li>
-      <li>Your delivery fee is confirmed at checkout.</li>
+      <li>Delivery within Cambodia is $2 per order, shown at checkout.</li>
     </ul>
 
     <h4 class="tiny">Delays</h4>
