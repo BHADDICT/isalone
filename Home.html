@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISALONE — Timeless, Comfortable Everyday Wear</title>
+<meta name="description" content="ISALONE is a clothing brand creating timeless, comfortable, effortlessly stylish everyday wear. Quality fabrics, minimalist aesthetics, modern silhouettes.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#111111">
+<link rel="canonical" href="https://isalonestudio.com/">
+<link rel="icon" type="image/png" sizes="32x32" href="./img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./img/icon-192.png">
+<link rel="apple-touch-icon" href="./img/apple-touch-icon.png">
+
+<script>
+/* ---------- ACCESS GATE ----------
+   Before launch, only people who entered the password on index.html can see this page.
+   After launch, everyone can. Use the SAME launch time and hash as index.html. */
+(function(){
+  var LAUNCH = new Date("2026-10-15T12:00:00+07:00").getTime();
+  var ACCESS_HASH = "1cc2190628f386ed7d271193878b18bde9fee819fd20d660ec6d88016c2d86f8";
+  if (Date.now() >= LAUNCH) return;
+  var ok = false;
+  try { ok = localStorage.getItem("isalone_access") === ACCESS_HASH; } catch(e){}
+  if (!ok) location.replace("./?locked");
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#111;
+    --font:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    --cursive:"Cormorant Garamond", "Times New Roman", Georgia, serif;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#111;color:#fff;font-family:var(--font);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-transform:inherit;letter-spacing:inherit}
+  img{display:block}
+  .tiny{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+
+  /* ---------- HEADER ---------- */
+  header{position:fixed;top:0;left:0;right:0;z-index:20;
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:22px 32px}
+  .h-left,.h-right{display:flex;gap:28px;align-items:center}
+  .h-right{justify-content:flex-end}
+  .h-left a,.h-right a{position:relative}
+  .h-left a::after,.h-right a::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+  .h-left a:hover::after,.h-right a:hover::after{transform:scaleX(1)}
+  .logo img{height:46px;width:auto;filter:invert(1)}
+  .burger{display:none;align-items:center;gap:8px}
+  .ico{width:12px;height:12px}
+
+  /* ---------- FULL-SCREEN VIDEO ---------- */
+  .hero{position:fixed;inset:0;overflow:hidden;background:#1a1b1a}
+  .hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:49% 50%;
+    opacity:0;transition:opacity 1.2s var(--ease)}
+  .hero video.ready{opacity:1}
+  .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(0,0,0,.3),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 55%,rgba(0,0,0,.35))}
+
+  .hero-copy{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center}
+  .hero-copy > *{opacity:0;transform:translateY(12px);animation:rise 1.2s var(--ease) forwards}
+  .hero-copy > *:nth-child(2){animation-delay:.2s}
+  .hero-copy > *:nth-child(3){animation-delay:.4s}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .eyebrow{opacity:.85;letter-spacing:.24em;margin-bottom:-10px}
+  .season{font-family:var(--cursive);font-style:italic;font-weight:400;font-size:min(44px,4.6vw);line-height:1.2;letter-spacing:.005em;white-space:nowrap}
+  .m-br{display:none}
+
+  .ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .cta{position:relative;overflow:hidden;display:inline-block;border:1px solid rgba(255,255,255,.9);
+    padding:15px 22px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;
+    transition:color .45s var(--ease)}
+  .cta::before{content:"";position:absolute;inset:0;background:#fff;transform:translateY(101%);transition:transform .45s var(--ease)}
+  .cta span{position:relative}
+  .cta:hover{color:var(--black)}
+  .cta:hover::before{transform:none}
+
+  .pause{position:absolute;z-index:3;right:32px;bottom:26px;opacity:.8}
+  .pause:hover{opacity:1}
+
+  /* ---------- MENU PANEL ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .3s;z-index:40}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .panel{position:fixed;top:0;bottom:0;left:0;width:min(400px,92vw);background:#fff;color:var(--black);z-index:50;padding:28px;
+    transform:translateX(-100%);transition:transform .45s var(--ease)}
+  .panel.on{transform:none}
+  .panel .close{position:absolute;top:24px;right:28px}
+  .panel h3{margin:4px 0 36px}
+  .menu-links a{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:9px 0;transition:padding .25s var(--ease)}
+  .menu-links a:hover{padding-left:8px}
+
+  @media (max-width:900px){
+    header{padding:14px 16px}
+    .h-left a,.h-right .hide-m{display:none}
+    .burger{display:flex}
+    .logo img{height:38px}
+    .pause{right:16px;bottom:18px}
+  }
+  @media (max-width:600px){
+    .hero-copy{width:100%;padding:0 28px;gap:30px}
+    .season{white-space:normal;font-size:min(36px,7vw)}
+    .season .l1,.season .l2{white-space:nowrap}
+    .m-br{display:inline}
+    .ctas{flex-direction:column;width:100%;max-width:300px}
+    .cta{text-align:center;padding:17px 22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hero-copy > *{animation:none;opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <button class="tiny burger" id="openMenu" aria-label="Menu">
+      <svg class="ico" viewBox="0 0 12 12"><path d="M0 2h12M0 6h12M0 10h12" stroke="currentColor"/></svg><span>Menu</span>
+    </button>
+    <a href="pro.html" class="tiny">Shop</a>
+    <a href="pro.html" class="tiny">Collection</a>
+    <a href="lookbook.html" class="tiny">Lookbook</a>
+  </div>
+  <a href="home.html" class="logo" aria-label="ISALONE home"><img src="./img/logo.png" alt="ISALONE logo"></a>
+  <div class="h-right">
+    <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener" class="tiny hide-m">Instagram</a>
+    <a href="pro.html" class="tiny">Cart ( <span id="cartCount">0</span> )</a>
+  </div>
+</header>
+
+<main class="hero" aria-label="ISALONE campaign">
+  <video id="heroVideo" src="./img/vid.MP4" poster="./img/hero-poster.jpg" muted autoplay loop playsinline preload="auto" aria-hidden="true"></video>
+  <div class="hero-copy">
+    <p class="tiny eyebrow">ISALONE — Drop 001</p>
+    <h1 class="season"><span class="l1">When you wear this,</span><br class="m-br"> <span class="l2">you’ll always think about me.</span></h1>
+    <div class="ctas">
+      <a href="pro.html" class="cta"><span>Shop Drop 001</span></a>
+      <a href="lookbook.html" class="cta"><span>View Lookbook</span></a>
+    </div>
+  </div>
+  <button class="pause tiny" id="toggleVideo" aria-label="Pause background video">Pause</button>
+</main>
+
+<aside class="panel" id="menu">
+  <button class="close tiny" data-close>Close</button>
+  <h3 class="tiny">Menu</h3>
+  <nav class="menu-links">
+    <a href="home.html">Home</a><a href="pro.html">Shop</a><a href="pro.html">Collection</a><a href="lookbook.html">Lookbook</a>
+    <a href="https://www.instagram.com/isalone_studio" target="_blank" rel="noopener">Instagram</a>
+  </nav>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+/* video fades in once it can play */
+const v = $("#heroVideo");
+if (v.readyState >= 3) v.classList.add("ready");
+else v.addEventListener("canplay", () => v.classList.add("ready"), { once:true });
+const p = v.play(); if (p) p.catch(() => {});
+$("#toggleVideo").onclick = () => {
+  const b = $("#toggleVideo");
+  if (v.paused) { v.play(); b.textContent = "Pause"; b.setAttribute("aria-label","Pause background video"); }
+  else { v.pause(); b.textContent = "Play"; b.setAttribute("aria-label","Play background video"); }
+};
+
+/* cart count (shared with pro.html and checkout.html) */
+function cartCount(){
+  let n = 0;
+  try { const c = JSON.parse(localStorage.getItem("isalone_cart")); if (Array.isArray(c)) n = c.reduce((s,i)=>s+(i.qty||1),0); } catch(e){}
+  $("#cartCount").textContent = n;
+}
+cartCount(); addEventListener("pageshow", cartCount); addEventListener("storage", cartCount);
+
+/* mobile menu */
+function closeMenu(){ $("#menu").classList.remove("on"); $("#scrim").classList.remove("on"); }
+$("#openMenu").onclick = () => { $("#menu").classList.add("on"); $("#scrim").classList.add("on"); };
+$("#scrim").onclick = closeMenu;
+document.querySelectorAll("[data-close], .menu-links a").forEach(b => b.addEventListener("click", closeMenu));
+addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
+</script>
+</body>
+</html>
