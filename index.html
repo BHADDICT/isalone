@@ -119,6 +119,9 @@
   .season{font-family:var(--cursive);font-style:italic;font-weight:400;font-size:min(44px,4.6vw);line-height:1.2;letter-spacing:.005em;white-space:nowrap}
   .m-br{display:none}
   .ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  /* home view: buttons sit low on the video so the model stays clear */
+  body:not(.prelaunch) .hero-copy{top:auto;bottom:calc(64px + env(safe-area-inset-bottom));transform:translateX(-50%)}
 
   /* countdown */
   .launch{display:flex;flex-direction:column;align-items:center;gap:10px}
@@ -301,10 +304,10 @@
   <video id="heroVideo" data-src="./img/vid.MP4" data-poster="./img/hero-poster.jpg" muted loop playsinline preload="auto" aria-hidden="true"></video>
 
   <div class="hero-copy">
-    <p class="tiny eyebrow">ISALONE — Drop 001</p>
+    <p class="tiny eyebrow pre-only">ISALONE — Drop 001</p>
 
     <!-- ===== HOME VIEW ===== -->
-    <h1 class="season home-only"><span class="l1">When you wear this,</span><br class="m-br"> <span class="l2">you’ll always think about me.</span></h1>
+    <h1 class="sr-only">ISALONE — Drop 001</h1>
     <div class="ctas home-only">
       <a href="pro.html" class="cta"><span>Shop Drop 001</span></a>
       <a href="lookbook.html" class="cta"><span>View Lookbook</span></a>
