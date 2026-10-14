@@ -134,6 +134,14 @@
   .qr-steps{list-style:none;counter-reset:s;text-align:left;max-width:300px;width:100%;color:#555;display:grid;gap:8px}
   .qr-steps li{counter-increment:s;display:flex;gap:10px}
   .qr-steps li::before{content:"0" counter(s);color:var(--ink);font-weight:700}
+  .trx{width:100%;max-width:300px;text-align:left}
+  .trx label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500}
+  .trx input{width:100%;height:46px;padding:0 14px;border:1px solid var(--line);border-radius:0;font:inherit;font-size:14px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+  .trx input:focus{border-color:var(--ink)}
+  .trx.invalid input{border-color:var(--error)}
+  .trx-help{margin-top:6px;color:var(--muted);font-size:10px;line-height:1.6}
+  .trx.invalid .trx-help{color:var(--error)}
+  @media (max-width:520px){.trx input{font-size:16px}}
 
   /* ---------- Receipt ---------- */
   .receipt{max-width:560px;border:1px solid var(--line);padding:32px;background:#fff}
@@ -371,8 +379,16 @@
         <ol class="qr-steps caps">
           <li><span>Open ABA Mobile or any KHQR bank app and scan</span></li>
           <li><span>Enter exactly <b id="qrAmount2"></b> (USD). The name shown should be SAKADA PHAN</span></li>
-          <li><span>Put your order no. in the remark, then press Done</span></li>
+          <li><span>Put your order no. in the remark and pay</span></li>
+          <li><span>Copy the transaction ID from your bank receipt into the box below</span></li>
         </ol>
+
+        <!-- Proof of payment: "Done" stays locked until a transaction ID is entered -->
+        <div class="trx caps" id="trxWrap">
+          <label for="trxId">Transaction ID (from your payment receipt)</label>
+          <input id="trxId" autocomplete="off" inputmode="text" placeholder="e.g. 100FT12345678" maxlength="40">
+          <div class="trx-help" id="trxHelp">In ABA: open the payment receipt and copy the "Trx. ID". Other banks: the reference / transaction no. We check every ID against our ABA account before shipping.</div>
+        </div>
 
         <button class="btn caps" id="paidBtn" style="max-width:300px"><span>Done, I've paid</span><span>→</span></button>
       </div>
@@ -398,12 +414,14 @@
         <div class="rc-thanks">
           <div class="caps rc-muted">Thank you, <span id="rcName"></span></div>
           <h2>Order received</h2>
-          <p>We'll check your ABA payment and email you when your order ships.</p>
+          <p>Your payment is being checked. Once we confirm it in ABA, we'll prepare your order and email you when it ships.</p>
         </div>
         <div class="rc-meta caps">
           <div><span class="rc-muted">Order no.</span><b id="rcOrder"></b></div>
           <div><span class="rc-muted">Date</span><b id="rcDate"></b></div>
           <div><span class="rc-muted">Payment</span><b>ABA KHQR</b></div>
+          <div><span class="rc-muted">Transaction ID</span><b id="rcTrx"></b></div>
+          <div><span class="rc-muted">Status</span><b>Pending check</b></div>
         </div>
         <div class="rc-items" id="rcItems"></div>
         <div class="rc-totals caps" id="rcTotals"></div>
@@ -517,6 +535,48 @@
     }, { enableHighAccuracy:true, timeout:15000, maximumAge:60000 });
   });
   mapLink.addEventListener("input", function(){ msg.parentNode.classList.remove("ok"); msg.textContent = DEFAULT_MSG; });
+})();
+</script>
+
+<!-- Payment guard: "Done, I've paid" only works once a transaction ID is typed.
+     Listens on the whole page in the capture phase, so it runs before checkout.js and the order email. -->
+<script>
+(function(){
+  var btn = document.getElementById("paidBtn");
+  var input = document.getElementById("trxId");
+  var wrap = document.getElementById("trxWrap");
+  var help = document.getElementById("trxHelp");
+  var HELP = help.textContent;
+  if (!btn || !input) return;
+
+  // a real bank reference: at least 6 letters/numbers, not one character repeated
+  function valid(v){
+    v = v.replace(/[\s#-]/g, "");
+    return /^[A-Za-z0-9]{6,40}$/.test(v) && !/^(.)\1+$/.test(v) && /\d/.test(v);
+  }
+  function refresh(){
+    var ok = valid(input.value.trim());
+    btn.disabled = !ok;
+    btn.title = ok ? "" : "Enter your transaction ID first";
+    return ok;
+  }
+  input.addEventListener("input", function(){ wrap.classList.remove("invalid"); help.textContent = HELP; refresh(); });
+  refresh();
+  // checkout.js may re-enable the button when the step opens, so re-check whenever it changes
+  new MutationObserver(function(){ var ok = valid(input.value.trim()); if (btn.disabled === ok) btn.disabled = !ok; })
+    .observe(btn, { attributes:true, attributeFilter:["disabled"] });
+
+  document.addEventListener("click", function(e){
+    if (!e.target.closest || !e.target.closest("#paidBtn")) return;
+    if (refresh()) {
+      var rc = document.getElementById("rcTrx"); if (rc) rc.textContent = input.value.trim();
+      return;
+    }
+    e.preventDefault(); e.stopImmediatePropagation();
+    wrap.classList.add("invalid");
+    help.textContent = "Please pay first, then enter the transaction ID from your receipt.";
+    input.focus();
+  }, true);
 })();
 </script>
 
@@ -663,7 +723,7 @@
     var ship = document.querySelector("#shipOptions .option.selected");
     return {
       o: txt("rcOrder"), d: txt("rcDate"), n: txt("rcName"),
-      ph: val("phone"), em: val("email"),
+      ph: val("phone"), em: val("email"), trx: val("trxId"),
       items: items, tot: totals,
       ship: ship ? ship.innerText.replace(/\s*\n\s*/g, " · ").trim() : "",
       addr: txt("rcAddr")
@@ -694,7 +754,7 @@
     }).join("");
   }
   function receiptText(o){
-    var L = ["ISALONE — RECEIPT", "Order no.: " + o.o, "Date: " + o.d, "Payment: ABA KHQR", "",
+    var L = ["ISALONE — RECEIPT", "Order no.: " + o.o, "Date: " + o.d, "Payment: ABA KHQR", "Transaction ID: " + o.trx + " (check in ABA before shipping)", "",
              "Customer: " + o.n, "Phone: " + o.ph, "Email: " + o.em, "", "ITEMS"];
     o.items.forEach(function(it){ L.push("• " + it[0] + "  —  " + it[1]); });
     L.push("");
@@ -743,6 +803,7 @@
       address_html: esc(o.addr).replace(/\n/g, "<br>")
                       .replace(/(https?:\/\/[^\s<·]+)/g, '<a href="$1" style="color:#111111">$1</a>'),
       map_link:     val("mapLink"),
+      trx_id:       o.trx,
       logo_url:     new URL("img/logo.png", location.href).href,
       print_link:   new URL(PRINT_PAGE, location.href).href + "#" + encode(o)
     }, { publicKey: EMAILJS_PUBLIC_KEY }).then(function(){
