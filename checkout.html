@@ -290,6 +290,7 @@
         <div class="grid">
           <div class="field full"><label class="caps" for="email">Email</label><input id="email" type="email" autocomplete="email" required><div class="err">Enter a valid email</div></div>
           <div class="field full"><label class="caps" for="phone">Phone</label><input id="phone" type="tel" autocomplete="tel" required><div class="err">Enter a phone number</div></div>
+          <div class="field full"><label class="caps" for="instagram">Instagram (optional)</label><input id="instagram" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@yourusername"></div>
         </div>
       </div>
       <div class="block">
@@ -699,6 +700,11 @@
 
   function txt(id){ var el = document.getElementById(id); return el ? (el.innerText || el.textContent || "").trim() : ""; }
   function val(id){ var el = document.getElementById(id); return el ? (el.value || "").trim() : ""; }
+  // "@name", "name" or an instagram.com link → "name"
+  function igHandle(){
+    var v = val("instagram").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/[/?#].*$/, "").replace(/^@+/, "");
+    return /^[A-Za-z0-9._]{1,30}$/.test(v) ? v : "";
+  }
   function esc(s){
     return String(s || "").replace(/[&<>"']/g, function(c){
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -723,7 +729,7 @@
     var ship = document.querySelector("#shipOptions .option.selected");
     return {
       o: txt("rcOrder"), d: txt("rcDate"), n: txt("rcName"),
-      ph: val("phone"), em: val("email"), trx: val("trxId"),
+      ph: val("phone"), em: val("email"), trx: val("trxId"), ig: igHandle(),
       items: items, tot: totals,
       ship: ship ? ship.innerText.replace(/\s*\n\s*/g, " · ").trim() : "",
       addr: txt("rcAddr")
@@ -755,7 +761,7 @@
   }
   function receiptText(o){
     var L = ["ISALONE — RECEIPT", "Order no.: " + o.o, "Date: " + o.d, "Payment: ABA KHQR", "Transaction ID: " + o.trx + " (check in ABA before shipping)", "",
-             "Customer: " + o.n, "Phone: " + o.ph, "Email: " + o.em, "", "ITEMS"];
+             "Customer: " + o.n, "Phone: " + o.ph, "Email: " + o.em, "Instagram: " + (o.ig ? "@" + o.ig : "—"), "", "ITEMS"];
     o.items.forEach(function(it){ L.push("• " + it[0] + "  —  " + it[1]); });
     L.push("");
     o.tot.forEach(function(t){ L.push(t[0] + ": " + t[1]); });
@@ -804,6 +810,8 @@
                       .replace(/(https?:\/\/[^\s<·]+)/g, '<a href="$1" style="color:#111111">$1</a>'),
       map_link:     val("mapLink"),
       trx_id:       o.trx,
+      instagram:    o.ig ? "@" + o.ig : "—",
+      instagram_url: o.ig ? "https://www.instagram.com/" + o.ig : "",
       logo_url:     new URL("img/logo.png", location.href).href,
       print_link:   new URL(PRINT_PAGE, location.href).href + "#" + encode(o)
     }, { publicKey: EMAILJS_PUBLIC_KEY }).then(function(){
